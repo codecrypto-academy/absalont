@@ -1,0 +1,33 @@
+[profile.default]
+src = "contracts"
+out = "out"
+libs = ["lib"]
+solc = "0.8.20"
+optimizer = true
+optimizer_runs = 200
+
+# Remappings
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/=lib/openzeppelin-contracts/"
+]
+
+# Testing
+[profile.default.fuzz]
+runs = 256
+max_test_rejects = 65536
+
+# Formatter
+[fmt]
+bracket_spacing = true
+int_types = "long"
+line_length = 100
+multiline_func_header = "attributes_first"
+number_underscore = "thousands"
+quote_style = "double"
+tab_width = 4
+wrap_comments = true
+
+# Local development with Anvil
+[rpc_endpoints]
+localhost = "http://127.0.0.1:8545"
