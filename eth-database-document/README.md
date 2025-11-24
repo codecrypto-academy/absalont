@@ -74,7 +74,6 @@ cd eth-database-document
 ```bash
 # Instalar Foundry
 curl -L https://foundry.paradigm.xyz | bash foundryup
-forge install
 
 # Instalar dependencias
 forge install OpenZeppelin/openzeppelin-contracts
