@@ -1,6 +1,26 @@
 # absalont
 ###### Codecrypto Academy Student Repo
 
+# Repositorio GitHub
+
+Descargar proyectos en el local:
+```
+mkdir proyectos_absalont
+git init
+git remote add origin https://github.com/codecrypto-academy/absalont.git
+git remote -v
+	origin	https://github.com/codecrypto-academy/absalont.git (fetch)
+	origin	https://github.com/codecrypto-academy/absalont.git (push)
+git pull origin 4_proyectos
+git checkout 4_proyectos
+ls -lha
+	dao_voting
+	e_commerce
+	eth-database-document
+	.git
+	README.md
+```
+
 # Proyecto E-Commerce con Blockchain y Stablecoins
 
 ## Descripción General
