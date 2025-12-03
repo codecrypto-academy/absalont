@@ -6,13 +6,14 @@
 Descargar proyectos en el local:
 ```
 mkdir proyectos_absalont
+cd proyectos_absalont
 git init
 git remote add origin https://github.com/codecrypto-academy/absalont.git
 git remote -v
 	origin	https://github.com/codecrypto-academy/absalont.git (fetch)
 	origin	https://github.com/codecrypto-academy/absalont.git (push)
+git checkout 4_proyectos	
 git pull origin 4_proyectos
-git checkout 4_proyectos
 ls -lha
 	dao_voting
 	e_commerce
