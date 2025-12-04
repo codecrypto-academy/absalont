@@ -1,0 +1,21 @@
+[profile.default]
+src = 'src'
+out = 'out'
+libs = ['lib']
+test = 'test'
+cache_dir = 'cache'
+solc = '0.8.19'
+
+[profile.ci]
+fuzz_runs = 10000
+
+# Optimizaciones para producción
+[profile.default.optimizer]
+enabled = true
+runs = 200
+
+# Configuración de RPC
+[rpc_endpoints]
+mainnet = "https://eth-mainnet.alchemyapi.io/v2/YOUR_API_KEY"
+sepolia = "https://eth-sepolia.alchemyapi.io/v2/YOUR_API_KEY"
+localhost = "http://127.0.0.1:8545"

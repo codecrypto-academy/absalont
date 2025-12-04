@@ -12,12 +12,14 @@ git remote add origin https://github.com/codecrypto-academy/absalont.git
 git remote -v
 	origin	https://github.com/codecrypto-academy/absalont.git (fetch)
 	origin	https://github.com/codecrypto-academy/absalont.git (push)
+git fetch origin	
 git checkout 4_proyectos	
 git pull origin 4_proyectos
 ls -lha
 	dao_voting
 	e_commerce
 	eth-database-document
+	escrow
 	.git
 	README.md
 ```
@@ -119,4 +121,64 @@ eth-database-document/
 ├── foundry.toml
 ├── package.json
 └── README.md
+```
+
+# Proyecto Escrow DApp
+
+## Descripción General
+
+Crear una aplicación descentralizada (DApp) completa para realizar intercambios seguros de tokens ERC20 utilizando un contrato inteligente de escrow.
+
+## 📁 Estructura del Proyecto
+
+```
+escrow/
+│
+├── 🔗 Smart Contracts (Foundry)
+│   └── sc/
+│       ├── src/
+│       │   ├── ✅ Escrow.sol              (250 líneas - Contrato principal)
+│       │   ├── ✅ MockERC20.sol           (32 líneas - Mock para testing)
+│       │   └── interfaces/
+│       │       └── ✅ IEscrow.sol         (60 líneas - Interfaz del contrato)
+│       ├── script/
+│       │   └── ✅ Deploy.s.sol            (Script deployment)
+│       └── test/
+│           └── ✅ Escrow.t.sol            (348 líneas - 23 tests)
+│
+├── 🎨 Frontend (Next.js 14)
+│   └── web/
+│       └── src/
+│           ├── ✅ components/             (6 componentes principales)
+│           │   ├── ConnectionButton.tsx
+│           │   ├── AddToken.tsx
+│           │   ├── CreateOperation.tsx
+│           │   ├── OperationsList.tsx
+│           │   ├── BalanceDebug.tsx
+│           │   └── WalletSelector.tsx
+│           ├── ✅ hooks/                  (5 hooks personalizados)
+│           │   ├── useWallet.ts
+│           │   ├── useContract.ts
+│           │   ├── useEscrow.ts
+│           │   ├── useBalance.ts
+│           │   └── useToken.ts
+│           ├── ✅ context/                (Context wallet global)
+│           │   └── WalletContext.tsx
+│           ├── ✅ lib/                    (Utilidades)
+│           │   ├── constants.ts
+│           │   └── ethers.ts
+│           └── ✅ types/                  (TypeScript types)
+│               ├── index.ts
+│               ├── escrow.ts
+│               └── ethereum.d.ts
+│
+└── 📝 Documentación & Scripts
+    ├── ✅ PROJECT_STATUS.md       (Resumen completo)
+    ├── ✅ QUICK_START.md          (Guía rápida)
+    ├── ✅ setup.sh                (Script setup)
+    ├── ✅ dev-start.sh            (Script desarrollo)
+    ├── ✅ START_HERE.md
+    ├── ✅ TESTING.md
+    ├── ✅ DEPLOYMENT.md
+    └── ✅ ARCHITECTURE.md
 ```

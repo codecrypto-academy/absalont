@@ -1,0 +1,102 @@
+# ===========================
+# Smart Contracts (Foundry)
+# ===========================
+
+# Compiler files
+sc/cache/
+sc/out/
+sc/lib/
+# Broadcast logs (mantener estructura pero ignorar dry-run y localhost)
+broadcast/*/31337/
+broadcast/**/dry-run/
+
+# ===========================
+# dApp (Next.js)
+# ===========================
+
+# Dependencies
+web/node_modules/
+web/.pnp
+web/.pnp.js
+
+# Testing
+web/coverage/
+web/.nyc_output
+
+# Next.js
+web/.next/
+web/out/
+web/build/
+web/dist/
+
+# Production
+web/build
+
+# Misc
+web/.DS_Store
+web/*.pem
+
+# Debug
+web/npm-debug.log*
+web/yarn-debug.log*
+web/yarn-error.log*
+
+# Local env files
+web/.env*.local
+web/.env.local
+web/.env.development.local
+web/.env.test.local
+web/.env.production.local
+
+# Vercel
+web/.vercel
+
+# Typescript
+web/*.tsbuildinfo
+web/next-env.d.ts
+
+# ===========================
+# General
+# ===========================
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Package managers
+node_modules/
+.pnpm-store/
+.yarn/
+!.yarn/releases
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
