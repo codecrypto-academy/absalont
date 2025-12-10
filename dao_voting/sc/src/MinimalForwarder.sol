@@ -33,6 +33,10 @@ contract MinimalForwarder is EIP712 {
         return _nonces[from];
     }
 
+    function DOMAIN_SEPARATOR() public view returns (bytes32) {
+        return _domainSeparatorV4();
+    }
+
     function verify(ForwardRequest calldata req, bytes calldata signature) public view returns (bool) {
         address signer = _hashTypedDataV4(
             keccak256(abi.encode(TYPEHASH, req.from, req.to, req.value, req.gas, req.nonce, keccak256(req.data)))

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '@/context/Web3Context';
 import { useContracts } from './useContracts';
 
@@ -9,7 +9,7 @@ export function useDAOBalance() {
   const [totalBalance, setTotalBalance] = useState<bigint>(0n);
   const [loading, setLoading] = useState(true);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!daoContract || !account) {
       setLoading(false);
       return;
@@ -28,11 +28,11 @@ export function useDAOBalance() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [daoContract, account]);
 
   useEffect(() => {
     refresh();
-  }, [daoContract, account]);
+  }, [refresh]);
 
   return { balance, totalBalance, loading, refresh };
 }

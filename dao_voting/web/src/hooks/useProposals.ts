@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useContracts } from './useContracts';
 import { Proposal } from '@/lib/contracts';
 
@@ -6,22 +6,20 @@ export function useProposals() {
   const { daoContract } = useContracts();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const isInitialized = useRef(false);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!daoContract) {
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
       const count = await daoContract.getProposalCount();
       const proposalPromises = [];
-
       for (let i = 1; i <= Number(count); i++) {
         proposalPromises.push(daoContract.getProposal(i));
       }
-
       const fetchedProposals = await Promise.all(proposalPromises);
       setProposals(fetchedProposals);
     } catch (error) {
@@ -29,14 +27,17 @@ export function useProposals() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [daoContract]);
 
   useEffect(() => {
-    refresh();
-
     if (!daoContract) return;
 
-    // Listen for new proposals
+    // Initial fetch only once
+    if (!isInitialized.current) {
+      refresh();
+      isInitialized.current = true;
+    }
+
     const filterProposalCreated = daoContract.filters.ProposalCreated();
     const filterVoted = daoContract.filters.Voted();
     const filterExecuted = daoContract.filters.ProposalExecuted();
@@ -50,7 +51,7 @@ export function useProposals() {
       daoContract.off(filterVoted, refresh);
       daoContract.off(filterExecuted, refresh);
     };
-  }, [daoContract]);
+  }, [daoContract, refresh]);
 
   return { proposals, loading, refresh };
 }

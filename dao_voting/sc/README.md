@@ -63,7 +63,7 @@ cp .env.example .env
 2. Deploy:
 ```bash
 source .env
-forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+forge script script/Deploy.s.sol --rpc-url $LOCALHOST_RPC_URL --broadcast
 ```
 
 ## Contratos

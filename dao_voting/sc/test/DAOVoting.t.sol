@@ -63,13 +63,14 @@ contract DAOVotingTest is Test {
         assertFalse(proposal.executed);
     }
     
-    function testFailCreateProposalWithInsufficientBalance() public {
+    function test_RevertWhen_CreateProposalWithInsufficientBalance() public {
         // User1 funds 10 ether
         vm.prank(user1);
         dao.fundDAO{value: 10 ether}();
         
         // User2 tries to create proposal without having 10% of balance
         vm.prank(user2);
+        vm.expectRevert(abi.encodeWithSignature("InsufficientBalance(uint256,uint256)", 1 ether, 0));
         dao.createProposal(recipient, 1 ether, block.timestamp + 1 days);
     }
     
@@ -123,7 +124,7 @@ contract DAOVotingTest is Test {
         assertEq(proposal.votesEnContra, 1);
     }
     
-    function testFailVoteAfterDeadline() public {
+    function test_RevertWhen_VoteAfterDeadline() public {
         vm.prank(user1);
         dao.fundDAO{value: 10 ether}();
         
@@ -134,10 +135,11 @@ contract DAOVotingTest is Test {
         vm.warp(block.timestamp + 2 days);
         
         vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSignature("DeadlineAlreadyPassed(uint256,uint256)", block.timestamp - 1 days, block.timestamp));
         dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
     }
     
-    function testFailVoteWithoutBalance() public {
+    function test_RevertWhen_VoteWithoutBalance() public {
         vm.prank(user1);
         dao.fundDAO{value: 10 ether}();
         
@@ -146,6 +148,7 @@ contract DAOVotingTest is Test {
         
         // User2 tries to vote without balance
         vm.prank(user2);
+        vm.expectRevert("Must have balance to vote");
         dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
     }
     
@@ -181,7 +184,7 @@ contract DAOVotingTest is Test {
         assertTrue(proposal.executed);
     }
     
-    function testFailExecuteBeforeDeadline() public {
+    function test_RevertWhen_ExecuteBeforeDeadline() public {
         vm.prank(user1);
         dao.fundDAO{value: 10 ether}();
         
@@ -192,10 +195,11 @@ contract DAOVotingTest is Test {
         dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
         
         // Try to execute before deadline
+        vm.expectRevert(abi.encodeWithSignature("DeadlineNotPassed(uint256,uint256)", block.timestamp + 1 days, block.timestamp));
         dao.executeProposal(proposalId);
     }
     
-    function testFailExecuteBeforeSafetyPeriod() public {
+    function test_RevertWhen_ExecuteBeforeSafetyPeriod() public {
         vm.prank(user1);
         dao.fundDAO{value: 10 ether}();
         
@@ -208,10 +212,11 @@ contract DAOVotingTest is Test {
         // Fast forward past deadline but not safety period
         vm.warp(block.timestamp + 1 days + 30 minutes);
         
+        vm.expectRevert(abi.encodeWithSignature("SafetyPeriodNotPassed(uint256,uint256)", block.timestamp + 30 minutes, block.timestamp));
         dao.executeProposal(proposalId);
     }
     
-    function testFailExecuteRejectedProposal() public {
+    function test_RevertWhen_ExecuteRejectedProposal() public {
         vm.prank(user1);
         dao.fundDAO{value: 10 ether}();
         
@@ -230,10 +235,11 @@ contract DAOVotingTest is Test {
         
         vm.warp(block.timestamp + 1 days + 1 hours + 1);
         
+        vm.expectRevert(abi.encodeWithSignature("ProposalNotApproved(uint256,uint256)", 0, 2));
         dao.executeProposal(proposalId);
     }
     
-    function testFailExecuteProposalTwice() public {
+    function test_RevertWhen_ExecuteProposalTwice() public {
         vm.prank(user1);
         dao.fundDAO{value: 10 ether}();
         
@@ -246,7 +252,10 @@ contract DAOVotingTest is Test {
         vm.warp(block.timestamp + 1 days + 1 hours + 1);
         
         dao.executeProposal(proposalId);
-        dao.executeProposal(proposalId); // Should fail
+        
+        // Should fail
+        vm.expectRevert(abi.encodeWithSignature("ProposalAlreadyExecuted(uint256)", 1));
+        dao.executeProposal(proposalId);
     }
     
     function testGaslessVote() public {

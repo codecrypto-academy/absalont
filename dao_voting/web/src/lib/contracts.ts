@@ -5,26 +5,225 @@ export const FORWARDER_ADDRESS = process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || ''
 export const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '31337');
 
 export const DAO_ABI = [
-  'function fundDAO() external payable',
-  'function createProposal(address recipient, uint256 amount, uint256 deadline) external returns (uint256)',
-  'function vote(uint256 proposalId, uint8 voteType) external',
-  'function executeProposal(uint256 proposalId) external',
-  'function getProposal(uint256 proposalId) external view returns (tuple(uint256 id, address recipient, uint256 amount, uint256 deadline, uint256 votesAFavor, uint256 votesEnContra, uint256 votesAbstencion, bool executed, uint256 createdAt))',
-  'function getUserBalance(address user) external view returns (uint256)',
-  'function hasUserVoted(uint256 proposalId, address user) external view returns (bool)',
-  'function getUserVote(uint256 proposalId, address user) external view returns (uint8)',
-  'function getProposalCount() external view returns (uint256)',
-  'function totalDAOBalance() external view returns (uint256)',
-  'event DAOFunded(address indexed funder, uint256 amount)',
-  'event ProposalCreated(uint256 indexed proposalId, address indexed recipient, uint256 amount, uint256 deadline)',
-  'event Voted(uint256 indexed proposalId, address indexed voter, uint8 voteType)',
-  'event ProposalExecuted(uint256 indexed proposalId, address indexed recipient, uint256 amount)',
+  {
+    type: 'constructor',
+    inputs: [{ name: 'trustedForwarder', type: 'address', internalType: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'fundDAO',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    name: 'createProposal',
+    inputs: [
+      { name: 'recipient', type: 'address', internalType: 'address' },
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'vote',
+    inputs: [
+      { name: 'proposalId', type: 'uint256', internalType: 'uint256' },
+      { name: 'voteType', type: 'uint8', internalType: 'enum DAOVoting.VoteType' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'executeProposal',
+    inputs: [{ name: 'proposalId', type: 'uint256', internalType: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'getProposal',
+    inputs: [{ name: 'proposalId', type: 'uint256', internalType: 'uint256' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        internalType: 'struct DAOVoting.Proposal',
+        components: [
+          { name: 'id', type: 'uint256', internalType: 'uint256' },
+          { name: 'recipient', type: 'address', internalType: 'address' },
+          { name: 'amount', type: 'uint256', internalType: 'uint256' },
+          { name: 'deadline', type: 'uint256', internalType: 'uint256' },
+          { name: 'votesAFavor', type: 'uint256', internalType: 'uint256' },
+          { name: 'votesEnContra', type: 'uint256', internalType: 'uint256' },
+          { name: 'votesAbstencion', type: 'uint256', internalType: 'uint256' },
+          { name: 'executed', type: 'bool', internalType: 'bool' },
+          { name: 'createdAt', type: 'uint256', internalType: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getUserBalance',
+    inputs: [{ name: 'user', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'hasUserVoted',
+    inputs: [
+      { name: 'proposalId', type: 'uint256', internalType: 'uint256' },
+      { name: 'user', type: 'address', internalType: 'address' },
+    ],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getUserVote',
+    inputs: [
+      { name: 'proposalId', type: 'uint256', internalType: 'uint256' },
+      { name: 'user', type: 'address', internalType: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint8', internalType: 'enum DAOVoting.VoteType' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getProposalCount',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'totalDAOBalance',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'MIN_PROPOSAL_PERCENTAGE',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'SAFETY_PERIOD',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'isTrustedForwarder',
+    inputs: [{ name: 'forwarder', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    name: 'DAOFunded',
+    inputs: [
+      { name: 'funder', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'amount', type: 'uint256', indexed: false, internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ProposalCreated',
+    inputs: [
+      { name: 'proposalId', type: 'uint256', indexed: true, internalType: 'uint256' },
+      { name: 'recipient', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'amount', type: 'uint256', indexed: false, internalType: 'uint256' },
+      { name: 'deadline', type: 'uint256', indexed: false, internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'Voted',
+    inputs: [
+      { name: 'proposalId', type: 'uint256', indexed: true, internalType: 'uint256' },
+      { name: 'voter', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'voteType', type: 'uint8', indexed: false, internalType: 'enum DAOVoting.VoteType' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ProposalExecuted',
+    inputs: [
+      { name: 'proposalId', type: 'uint256', indexed: true, internalType: 'uint256' },
+      { name: 'recipient', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'amount', type: 'uint256', indexed: false, internalType: 'uint256' },
+    ],
+  },
 ];
 
 export const FORWARDER_ABI = [
-  'function getNonce(address from) public view returns (uint256)',
-  'function verify(tuple(address from, address to, uint256 value, uint256 gas, uint256 nonce, bytes data) req, bytes calldata signature) public view returns (bool)',
-  'function execute(tuple(address from, address to, uint256 value, uint256 gas, uint256 nonce, bytes data) req, bytes calldata signature) public payable returns (bool, bytes memory)',
+  {
+    type: 'function',
+    name: 'getNonce',
+    inputs: [{ name: 'from', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'verify',
+    inputs: [
+      {
+        name: 'req',
+        type: 'tuple',
+        internalType: 'struct MinimalForwarder.ForwardRequest',
+        components: [
+          { name: 'from', type: 'address', internalType: 'address' },
+          { name: 'to', type: 'address', internalType: 'address' },
+          { name: 'value', type: 'uint256', internalType: 'uint256' },
+          { name: 'gas', type: 'uint256', internalType: 'uint256' },
+          { name: 'nonce', type: 'uint256', internalType: 'uint256' },
+          { name: 'data', type: 'bytes', internalType: 'bytes' },
+        ],
+      },
+      { name: 'signature', type: 'bytes', internalType: 'bytes' },
+    ],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'execute',
+    inputs: [
+      {
+        name: 'req',
+        type: 'tuple',
+        internalType: 'struct MinimalForwarder.ForwardRequest',
+        components: [
+          { name: 'from', type: 'address', internalType: 'address' },
+          { name: 'to', type: 'address', internalType: 'address' },
+          { name: 'value', type: 'uint256', internalType: 'uint256' },
+          { name: 'gas', type: 'uint256', internalType: 'uint256' },
+          { name: 'nonce', type: 'uint256', internalType: 'uint256' },
+          { name: 'data', type: 'bytes', internalType: 'bytes' },
+        ],
+      },
+      { name: 'signature', type: 'bytes', internalType: 'bytes' },
+    ],
+    outputs: [
+      { name: '', type: 'bool', internalType: 'bool' },
+      { name: '', type: 'bytes', internalType: 'bytes' },
+    ],
+    stateMutability: 'payable',
+  },
 ];
 
 export enum VoteType {

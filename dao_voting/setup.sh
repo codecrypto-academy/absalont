@@ -44,8 +44,8 @@ cd sc
 
 if [ ! -d "lib/openzeppelin-contracts" ]; then
     print_step "Instalando dependencias de Foundry..."
-    forge install OpenZeppelin/openzeppelin-contracts --no-commit
-    forge install foundry-rs/forge-std --no-commit
+    forge install OpenZeppelin/openzeppelin-contracts
+    forge install foundry-rs/forge-std
 fi
 
 print_step "Compilando contratos..."

@@ -37,9 +37,22 @@ contract DAOVoting is ERC2771Context {
     uint256 public constant MIN_PROPOSAL_PERCENTAGE = 10; // 10%
 
     event DAOFunded(address indexed funder, uint256 amount);
-    event ProposalCreated(uint256 indexed proposalId, address indexed recipient, uint256 amount, uint256 deadline);
-    event Voted(uint256 indexed proposalId, address indexed voter, VoteType voteType);
-    event ProposalExecuted(uint256 indexed proposalId, address indexed recipient, uint256 amount);
+    event ProposalCreated(
+        uint256 indexed proposalId,
+        address indexed recipient,
+        uint256 amount,
+        uint256 deadline
+    );
+    event Voted(
+        uint256 indexed proposalId,
+        address indexed voter,
+        VoteType voteType
+    );
+    event ProposalExecuted(
+        uint256 indexed proposalId,
+        address indexed recipient,
+        uint256 amount
+    );
 
     error InsufficientBalance(uint256 required, uint256 available);
     error ProposalNotFound(uint256 proposalId);
@@ -54,18 +67,24 @@ contract DAOVoting is ERC2771Context {
 
     function fundDAO() external payable {
         require(msg.value > 0, "Must send ETH");
-        _balances[_msgSender()] += msg.value;
+        address sender = _msgSender();
+        _balances[sender] += msg.value;
         totalDAOBalance += msg.value;
-        emit DAOFunded(_msgSender(), msg.value);
+        emit DAOFunded(sender, msg.value);
     }
 
-    function createProposal(address recipient, uint256 amount, uint256 deadline) external returns (uint256) {
+    function createProposal(
+        address recipient,
+        uint256 amount,
+        uint256 deadline
+    ) external returns (uint256) {
         require(recipient != address(0), "Invalid recipient");
         require(amount > 0, "Amount must be greater than 0");
         require(deadline > block.timestamp, "Deadline must be in the future");
 
         uint256 userBalance = _balances[_msgSender()];
-        uint256 requiredBalance = (totalDAOBalance * MIN_PROPOSAL_PERCENTAGE) / 100;
+        uint256 requiredBalance = (totalDAOBalance * MIN_PROPOSAL_PERCENTAGE) /
+            100;
 
         if (userBalance < requiredBalance) {
             revert InsufficientBalance(requiredBalance, userBalance);
@@ -96,7 +115,7 @@ contract DAOVoting is ERC2771Context {
         if (block.timestamp >= proposal.deadline) {
             revert DeadlineAlreadyPassed(proposal.deadline, block.timestamp);
         }
-        
+
         address voter = _msgSender();
         require(_balances[voter] > 0, "Must have balance to vote");
 
@@ -141,7 +160,10 @@ contract DAOVoting is ERC2771Context {
         }
 
         if (proposal.votesAFavor <= proposal.votesEnContra) {
-            revert ProposalNotApproved(proposal.votesAFavor, proposal.votesEnContra);
+            revert ProposalNotApproved(
+                proposal.votesAFavor,
+                proposal.votesEnContra
+            );
         }
 
         if (address(this).balance < proposal.amount) {
@@ -151,13 +173,15 @@ contract DAOVoting is ERC2771Context {
         proposal.executed = true;
         totalDAOBalance -= proposal.amount;
 
-        (bool success,) = proposal.recipient.call{value: proposal.amount}("");
+        (bool success, ) = proposal.recipient.call{value: proposal.amount}("");
         require(success, "Transfer failed");
 
         emit ProposalExecuted(proposalId, proposal.recipient, proposal.amount);
     }
 
-    function getProposal(uint256 proposalId) external view returns (Proposal memory) {
+    function getProposal(
+        uint256 proposalId
+    ) external view returns (Proposal memory) {
         if (_proposals[proposalId].id == 0) revert ProposalNotFound(proposalId);
         return _proposals[proposalId];
     }
@@ -166,11 +190,17 @@ contract DAOVoting is ERC2771Context {
         return _balances[user];
     }
 
-    function hasUserVoted(uint256 proposalId, address user) external view returns (bool) {
+    function hasUserVoted(
+        uint256 proposalId,
+        address user
+    ) external view returns (bool) {
         return _hasVoted[proposalId][user];
     }
 
-    function getUserVote(uint256 proposalId, address user) external view returns (VoteType) {
+    function getUserVote(
+        uint256 proposalId,
+        address user
+    ) external view returns (VoteType) {
         require(_hasVoted[proposalId][user], "User has not voted");
         return _userVotes[proposalId][user];
     }
@@ -180,8 +210,9 @@ contract DAOVoting is ERC2771Context {
     }
 
     receive() external payable {
-        _balances[_msgSender()] += msg.value;
+        address sender = _msgSender();
+        _balances[sender] += msg.value;
         totalDAOBalance += msg.value;
-        emit DAOFunded(_msgSender(), msg.value);
+        emit DAOFunded(sender, msg.value);
     }
 }

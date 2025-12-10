@@ -29,7 +29,7 @@ contract MinimalForwarderTest is Test {
         vm.deal(relayer, 10 ether);
     }
     
-    function testGetNonce() public {
+    function testGetNonce() public view {
         assertEq(forwarder.getNonce(user1), 0);
     }
     
@@ -67,7 +67,7 @@ contract MinimalForwarderTest is Test {
         assertEq(forwarder.getNonce(user2), 1);
     }
     
-    function testFailReplayAttack() public {
+    function test_RevertWhen_ReplayAttack() public {
         bytes memory data = abi.encodeWithSelector(dao.fundDAO.selector);
         
         MinimalForwarder.ForwardRequest memory request = MinimalForwarder.ForwardRequest({
@@ -89,10 +89,11 @@ contract MinimalForwarderTest is Test {
         
         // Second execution with same nonce should fail
         vm.prank(relayer);
+        vm.expectRevert("MinimalForwarder: signature does not match request");
         forwarder.execute{value: 1 ether}(request, signature);
     }
     
-    function testFailInvalidSignature() public {
+    function test_RevertWhen_InvalidSignature() public {
         bytes memory data = abi.encodeWithSelector(dao.fundDAO.selector);
         
         MinimalForwarder.ForwardRequest memory request = MinimalForwarder.ForwardRequest({
@@ -110,6 +111,7 @@ contract MinimalForwarderTest is Test {
         bytes memory signature = abi.encodePacked(r, s, v);
         
         vm.prank(relayer);
+        vm.expectRevert("MinimalForwarder: signature does not match request");
         forwarder.execute{value: 1 ether}(request, signature);
     }
     

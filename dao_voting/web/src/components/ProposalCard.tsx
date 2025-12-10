@@ -26,10 +26,11 @@ export default function ProposalCard({ proposal, onUpdate }: ProposalCardProps) 
       try {
         const voted = await daoContract.hasUserVoted(proposal.id, account);
         setHasVoted(voted);
-        
+
         if (voted) {
           const vote = await daoContract.getUserVote(proposal.id, account);
-          setUserVote(vote);
+          // Convert BigInt to number if necessary
+          setUserVote(Number(vote));
         }
       } catch (error) {
         console.error('Error checking vote:', error);
@@ -62,13 +63,15 @@ export default function ProposalCard({ proposal, onUpdate }: ProposalCardProps) 
     return { text: 'Rechazada', color: 'bg-red-100 text-red-800' };
   };
 
-  const getVoteTypeLabel = (voteType: VoteType) => {
-    switch (voteType) {
-      case VoteType.A_FAVOR:
+  const getVoteTypeLabel = (voteType: number) => {
+    // Ensure we compare numbers
+    const type = Number(voteType);
+    switch (type) {
+      case 0: // VoteType.A_FAVOR
         return 'A Favor';
-      case VoteType.EN_CONTRA:
+      case 1: // VoteType.EN_CONTRA
         return 'En Contra';
-      case VoteType.ABSTENCION:
+      case 2: // VoteType.ABSTENCION
         return 'Abstención';
       default:
         return 'Desconocido';
@@ -98,68 +101,74 @@ export default function ProposalCard({ proposal, onUpdate }: ProposalCardProps) 
   const status = getStatus();
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="text-xl font-bold">Propuesta #{proposal.id.toString()}</h3>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 hover:shadow-md hover:border-primary-200 transition-all duration-300 flex flex-col h-full">
+      <div className="flex justify-between items-start mb-6">
+        <h3 className="text-xl font-bold text-slate-900">
+          <span className="text-slate-400 mr-2">#</span>
+          {proposal.id.toString()}
+        </h3>
+        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${status.color}`}>
           {status.text}
         </span>
       </div>
 
-      <div className="space-y-3 mb-4">
-        <div>
-          <p className="text-sm text-gray-600">Beneficiario</p>
-          <p className="font-mono text-sm">{proposal.recipient}</p>
+      <div className="space-y-4 mb-6 flex-grow">
+        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Beneficiario</p>
+          <p className="font-mono text-sm text-slate-700 break-all">{proposal.recipient}</p>
         </div>
 
-        <div>
-          <p className="text-sm text-gray-600">Cantidad</p>
-          <p className="font-semibold text-lg">{formatEther(proposal.amount)} ETH</p>
-        </div>
-
-        <div>
-          <p className="text-sm text-gray-600">Fecha límite</p>
-          <p className="font-medium">{formatDate(proposal.deadline)}</p>
-        </div>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-        <p className="text-sm font-semibold text-gray-700 mb-2">Votos</p>
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-2xl font-bold text-green-600">{proposal.votesAFavor.toString()}</p>
-            <p className="text-xs text-gray-600">A Favor</p>
+            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Cantidad</p>
+            <p className="font-bold text-xl text-slate-900">{formatEther(proposal.amount)} <span className="text-sm text-slate-500 font-normal">ETH</span></p>
           </div>
+
           <div>
-            <p className="text-2xl font-bold text-red-600">{proposal.votesEnContra.toString()}</p>
-            <p className="text-xs text-gray-600">En Contra</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-600">{proposal.votesAbstencion.toString()}</p>
-            <p className="text-xs text-gray-600">Abstención</p>
+            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Fecha límite</p>
+            <p className="font-medium text-sm text-slate-900">{formatDate(proposal.deadline)}</p>
           </div>
         </div>
       </div>
 
-      {hasVoted && userVote !== null && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 rounded mb-4 text-sm">
-          Tu voto: <strong>{getVoteTypeLabel(userVote)}</strong>
+      <div className="border-t border-slate-100 pt-6 mt-auto">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Resultados de Votación</p>
+        <div className="grid grid-cols-3 gap-2 text-center mb-6">
+          <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+            <p className="text-xl font-bold text-green-600">{proposal.votesAFavor.toString()}</p>
+            <p className="text-xs text-green-700 font-medium mt-1">A Favor</p>
+          </div>
+          <div className="bg-red-50 rounded-lg p-3 border border-red-100">
+            <p className="text-xl font-bold text-red-600">{proposal.votesEnContra.toString()}</p>
+            <p className="text-xs text-red-700 font-medium mt-1">En Contra</p>
+          </div>
+          <div className="bg-slate-100 rounded-lg p-3 border border-slate-200">
+            <p className="text-xl font-bold text-slate-600">{proposal.votesAbstencion.toString()}</p>
+            <p className="text-xs text-slate-700 font-medium mt-1">Abstención</p>
+          </div>
         </div>
-      )}
 
-      {isActive() && (
-        <VoteButtons proposalId={proposal.id} onVoteSuccess={onUpdate} />
-      )}
+        {hasVoted && userVote !== null && (
+          <div className="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-xl mb-6 text-sm flex items-center justify-center gap-2">
+            <span>🗳️</span>
+            <span>Tu voto: <strong>{getVoteTypeLabel(userVote)}</strong></span>
+          </div>
+        )}
 
-      {canExecute() && account && (
-        <button
-          onClick={handleExecute}
-          disabled={executing}
-          className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-        >
-          {executing ? 'Ejecutando...' : 'Ejecutar Propuesta'}
-        </button>
-      )}
+        {isActive() && (
+          <VoteButtons proposalId={proposal.id} onVoteSuccess={onUpdate} />
+        )}
+
+        {canExecute() && account && (
+          <button
+            onClick={handleExecute}
+            disabled={executing}
+            className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mt-4"
+          >
+            {executing ? 'Ejecutando...' : 'Ejecutar Propuesta'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
