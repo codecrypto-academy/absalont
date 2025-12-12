@@ -1,0 +1,6 @@
+[submodule "eth-database-document/lib/openzeppelin-contracts"]
+	path = eth-database-document/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "eth-database-document/lib/forge-std"]
+	path = eth-database-document/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
