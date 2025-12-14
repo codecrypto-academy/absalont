@@ -51,7 +51,7 @@ contract DAOVotingTest is Test {
         
         // Create proposal (user1 has 100% of balance, needs 10%)
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 5 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 5 ether, block.timestamp + 1 days, "Test proposal");
         
         assertEq(proposalId, 1);
         assertEq(dao.getProposalCount(), 1);
@@ -71,7 +71,7 @@ contract DAOVotingTest is Test {
         // User2 tries to create proposal without having 10% of balance
         vm.prank(user2);
         vm.expectRevert(abi.encodeWithSignature("InsufficientBalance(uint256,uint256)", 1 ether, 0));
-        dao.createProposal(recipient, 1 ether, block.timestamp + 1 days);
+        dao.createProposal(recipient, 1 ether, block.timestamp + 1 days, "Test proposal");
     }
     
     function testVote() public {
@@ -83,7 +83,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 5 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         // User1 votes A FAVOR
         vm.prank(user1);
@@ -105,7 +105,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 10 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         // User1 votes A FAVOR
         vm.prank(user1);
@@ -129,7 +129,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 10 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         // Fast forward past deadline
         vm.warp(block.timestamp + 2 days);
@@ -144,7 +144,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 10 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         // User2 tries to vote without balance
         vm.prank(user2);
@@ -161,7 +161,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 5 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         // Vote
         vm.prank(user1);
@@ -189,7 +189,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 10 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         vm.prank(user1);
         dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
@@ -204,7 +204,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 10 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         vm.prank(user1);
         dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
@@ -224,7 +224,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 5 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         // More votes against
         vm.prank(user1);
@@ -244,7 +244,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 10 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         vm.prank(user1);
         dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
@@ -264,7 +264,7 @@ contract DAOVotingTest is Test {
         dao.fundDAO{value: 10 ether}();
         
         vm.prank(user1);
-        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days);
+        uint256 proposalId = dao.createProposal(recipient, 3 ether, block.timestamp + 1 days, "Test proposal");
         
         // Prepare gasless vote
         bytes memory data = abi.encodeWithSelector(
@@ -317,5 +317,159 @@ contract DAOVotingTest is Test {
                 structHash
             )
         );
+    }
+
+    // --- NEW TESTS START ---
+
+    function test_RevertWhen_CreateProposalInvalidRecipient() public {
+        vm.prank(user1);
+        dao.fundDAO{value: 10 ether}();
+        
+        vm.prank(user1);
+        vm.expectRevert("Invalid recipient");
+        dao.createProposal(address(0), 1 ether, block.timestamp + 1 days, "Invalid recipient");
+    }
+
+    function test_RevertWhen_CreateProposalInvalidAmount() public {
+        vm.prank(user1);
+        dao.fundDAO{value: 10 ether}();
+        
+        vm.prank(user1);
+        vm.expectRevert("Amount must be greater than 0");
+        dao.createProposal(recipient, 0, block.timestamp + 1 days, "Invalid amount");
+    }
+
+    function test_RevertWhen_CreateProposalInvalidDeadline() public {
+        vm.prank(user1);
+        dao.fundDAO{value: 10 ether}();
+        
+        vm.prank(user1);
+        vm.expectRevert("Deadline must be in the future");
+        dao.createProposal(recipient, 1 ether, block.timestamp - 1, "Invalid deadline");
+    }
+
+    function test_RevertWhen_VoteNonExistentProposal() public {
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSignature("ProposalNotFound(uint256)", 999));
+        dao.vote(999, DAOVoting.VoteType.A_FAVOR);
+    }
+
+    function test_RevertWhen_ExecuteNonExistentProposal() public {
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSignature("ProposalNotFound(uint256)", 999));
+        dao.executeProposal(999);
+    }
+
+    function testVoteAbstention() public {
+        vm.prank(user1);
+        dao.fundDAO{value: 10 ether}();
+        
+        vm.prank(user1);
+        uint256 proposalId = dao.createProposal(recipient, 1 ether, block.timestamp + 1 days, "Test");
+
+        vm.prank(user1);
+        dao.vote(proposalId, DAOVoting.VoteType.ABSTENCION);
+
+        DAOVoting.Proposal memory proposal = dao.getProposal(proposalId);
+        assertEq(proposal.votesAbstencion, 1);
+        assertEq(proposal.votesAFavor, 0);
+        assertEq(proposal.votesEnContra, 0);
+    }
+
+    function testChangeVoteFromAbstention() public {
+        vm.prank(user1);
+        dao.fundDAO{value: 10 ether}();
+        
+        vm.prank(user1);
+        uint256 proposalId = dao.createProposal(recipient, 1 ether, block.timestamp + 1 days, "Test");
+
+        vm.prank(user1);
+        dao.vote(proposalId, DAOVoting.VoteType.ABSTENCION);
+
+        vm.prank(user1);
+        dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
+
+        DAOVoting.Proposal memory proposal = dao.getProposal(proposalId);
+        assertEq(proposal.votesAbstencion, 0);
+        assertEq(proposal.votesAFavor, 1);
+    }
+
+    function testChangeVoteToAbstention() public {
+        vm.prank(user1);
+        dao.fundDAO{value: 10 ether}();
+        
+        vm.prank(user1);
+        uint256 proposalId = dao.createProposal(recipient, 1 ether, block.timestamp + 1 days, "Test");
+
+        vm.prank(user1);
+        dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
+
+        vm.prank(user1);
+        dao.vote(proposalId, DAOVoting.VoteType.ABSTENCION);
+
+        DAOVoting.Proposal memory proposal = dao.getProposal(proposalId);
+        assertEq(proposal.votesAFavor, 0);
+        assertEq(proposal.votesAbstencion, 1);
+    }
+
+    function testChangeVoteFromEnContra() public {
+        vm.prank(user1);
+        dao.fundDAO{value: 10 ether}();
+        
+        vm.prank(user1);
+        uint256 proposalId = dao.createProposal(recipient, 1 ether, block.timestamp + 1 days, "Test");
+
+        vm.prank(user1);
+        dao.vote(proposalId, DAOVoting.VoteType.EN_CONTRA);
+
+        vm.prank(user1);
+        dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
+
+        DAOVoting.Proposal memory proposal = dao.getProposal(proposalId);
+        assertEq(proposal.votesEnContra, 0);
+        assertEq(proposal.votesAFavor, 1);
+    }
+
+    function test_RevertWhen_ExecuteInsufficientDAOFunds() public {
+        vm.prank(user1);
+        dao.fundDAO{value: 10 ether}(); // Fund with 10
+
+        vm.prank(user1);
+        // Create proposal for 100 ether (more than balance but less than user balance if we didn't check user balance here logic wise, but logic checks DAO balance at execution)
+        // Wait, logic checks:
+        // createProposal: userBalance >= requiredBalance (10% of total) -> 1 ether. User has 10. OK.
+        // executeProposal: address(this).balance < proposal.amount
+        
+        // Let's make a proposal that passes creation checks but fails execution check.
+        // Total DAO balance: 10. 10% = 1. User has 10. OK.
+        // But if we want proposal amount > 10, we can't create it if createProposal checked that...
+        // createProposal DOES NOT check if DAO has enough funds at creation time! It only checks if user has enough "shares" to propose.
+        // So we can propose 100 ether.
+        
+        uint256 proposalId = dao.createProposal(recipient, 100 ether, block.timestamp + 1 days, "Big spend");
+        
+        vm.prank(user1);
+        dao.vote(proposalId, DAOVoting.VoteType.A_FAVOR);
+
+        vm.warp(block.timestamp + 1 days + 1 hours + 1);
+
+        vm.expectRevert(abi.encodeWithSignature("InsufficientDAOFunds(uint256,uint256)", 100 ether, 10 ether));
+        dao.executeProposal(proposalId);
+    }
+
+    function test_RevertWhen_GetNonExistentProposal() public {
+        vm.expectRevert(abi.encodeWithSignature("ProposalNotFound(uint256)", 999));
+        dao.getProposal(999);
+    }
+    
+    function test_RevertWhen_GetUserVoteNotVoted() public {
+        vm.prank(user1);
+        dao.fundDAO{value: 10 ether}();
+
+        vm.prank(user1);
+        uint256 proposalId = dao.createProposal(recipient, 1 ether, block.timestamp + 1 days, "Test");
+        
+        vm.expectRevert("User has not voted");
+        dao.getUserVote(proposalId, user1);
     }
 }

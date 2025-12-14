@@ -24,6 +24,7 @@ contract DAOVoting is ERC2771Context {
         uint256 votesAbstencion;
         bool executed;
         uint256 createdAt;
+        string description;
     }
 
     uint256 private _proposalCounter;
@@ -41,7 +42,8 @@ contract DAOVoting is ERC2771Context {
         uint256 indexed proposalId,
         address indexed recipient,
         uint256 amount,
-        uint256 deadline
+        uint256 deadline,
+        string description
     );
     event Voted(
         uint256 indexed proposalId,
@@ -76,7 +78,8 @@ contract DAOVoting is ERC2771Context {
     function createProposal(
         address recipient,
         uint256 amount,
-        uint256 deadline
+        uint256 deadline,
+        string memory description
     ) external returns (uint256) {
         require(recipient != address(0), "Invalid recipient");
         require(amount > 0, "Amount must be greater than 0");
@@ -102,10 +105,11 @@ contract DAOVoting is ERC2771Context {
             votesEnContra: 0,
             votesAbstencion: 0,
             executed: false,
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            description: description
         });
 
-        emit ProposalCreated(proposalId, recipient, amount, deadline);
+        emit ProposalCreated(proposalId, recipient, amount, deadline, description);
         return proposalId;
     }
 

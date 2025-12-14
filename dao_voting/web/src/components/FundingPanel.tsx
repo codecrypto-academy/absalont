@@ -1,19 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWeb3 } from '@/context/Web3Context';
 import { useContracts } from '@/hooks/useContracts';
 import { useDAOBalance } from '@/hooks/useDAOBalance';
 import { parseEther, formatEther } from 'ethers';
+import { Coins, Loader2 } from 'lucide-react';
 
 export default function FundingPanel() {
-  const { account } = useWeb3();
+  const { account, provider } = useWeb3();
   const { daoContract } = useContracts();
   const { balance, totalBalance, refresh } = useDAOBalance();
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<bigint>(0n);
+
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      if (account && provider) {
+        try {
+          const bal = await provider.getBalance(account);
+          setWalletBalance(bal);
+        } catch (err) {
+          console.error('Error fetching wallet balance:', err);
+        }
+      }
+    };
+
+    fetchWalletBalance();
+    // Refresh balance when account changes or after a successful transaction (via refresh prop if we wanted, but here we just re-fetch)
+  }, [account, provider, success]); // Re-fetch on success as well to show updated wallet balance
 
   const handleFund = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,11 +45,11 @@ export default function FundingPanel() {
       const value = parseEther(amount);
 
       // Get user's wallet balance
-      const provider = daoContract.runner?.provider;
+      // const provider = daoContract.runner?.provider; // Already have provider from useWeb3
       if (provider) {
-        const walletBalance = await provider.getBalance(account);
-        if (walletBalance < value) {
-          throw new Error(`Balance insuficiente. Tienes ${formatEther(walletBalance)} ETH pero intentas depositar ${amount} ETH`);
+        const currentWalletBalance = await provider.getBalance(account);
+        if (currentWalletBalance < value) {
+          throw new Error(`Balance insuficiente. Tienes ${formatEther(currentWalletBalance)} ETH pero intentas depositar ${amount} ETH`);
         }
       }
 
@@ -45,6 +63,12 @@ export default function FundingPanel() {
       setSuccess(`¡Depósito exitoso! ${amount} ETH agregados al DAO`);
       setAmount('');
       refresh();
+      // Update wallet balance immediately after success
+      if (provider) {
+        const newBal = await provider.getBalance(account);
+        setWalletBalance(newBal);
+      }
+
     } catch (err: any) {
       console.error('Error funding DAO:', err);
 
@@ -78,16 +102,20 @@ export default function FundingPanel() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 h-full">
+    <div className="bg-white rounded-2xl shadow-strong border border-slate-200 p-8 h-full">
       <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
         <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-3">
-          💰
+          <Coins className="w-6 h-6" />
         </span>
         Financiar DAO
       </h2>
 
       <div className="space-y-6">
         <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+          <div className="flex justify-between items-center mb-3 pb-3 border-b border-slate-200">
+            <span className="text-slate-600 font-medium">Tu balance en Wallet</span>
+            <span className="font-bold text-slate-900 text-lg">{Number(formatEther(walletBalance)).toFixed(4)} ETH</span>
+          </div>
           <div className="flex justify-between items-center mb-3 pb-3 border-b border-slate-200">
             <span className="text-slate-600 font-medium">Tu balance en DAO</span>
             <span className="font-bold text-slate-900 text-lg">{formatEther(balance)} ETH</span>
@@ -139,11 +167,8 @@ export default function FundingPanel() {
             className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             {loading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="animate-spin h-5 w-5 text-white" />
                 Procesando...
               </span>
             ) : (

@@ -4,3 +4,9 @@
 [submodule "eth-database-document/lib/forge-std"]
 	path = eth-database-document/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "dao_voting/sc/lib/forge-std"]
+	path = dao_voting/sc/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "dao_voting/sc/lib/openzeppelin-contracts"]
+	path = dao_voting/sc/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts

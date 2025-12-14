@@ -25,6 +25,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const connectWallet = async () => {
+    if (isConnecting) return;
+
     setIsConnecting(true);
     setError(null);
 
@@ -34,8 +36,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       }
 
       const browserProvider = new BrowserProvider(window.ethereum);
+
+      // Request accounts
       const accounts = await browserProvider.send('eth_requestAccounts', []);
-      
+
       if (accounts.length === 0) {
         throw new Error('No se encontraron cuentas');
       }
@@ -48,8 +52,14 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       setAccount(accounts[0]);
       setChainId(Number(network.chainId));
     } catch (err: any) {
-      console.error('Error connecting wallet:', err);
-      setError(err.message || 'Error al conectar wallet');
+      // Handle "Request of type 'wallet_requestPermissions' already pending" (code -32002)
+      if (err.code === -32002 || err.message?.includes('already pending')) {
+        console.warn('Conexión pendiente en MetaMask'); // Use warn instead of error
+        setError('Ya hay una solicitud de conexión pendiente. Por favor revisa tu extensión de MetaMask.');
+      } else {
+        console.error('Error connecting wallet:', err);
+        setError(err.message || 'Error al conectar wallet');
+      }
     } finally {
       setIsConnecting(false);
     }

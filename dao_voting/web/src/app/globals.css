@@ -5,20 +5,24 @@
 :root {
   --foreground-rgb: 15, 23, 42;
   /* Slate 900 */
-  --background-rgb: 248, 250, 252;
-  /* Slate 50 */
+  --background-rgb: 241, 245, 249;
+  /* Slate 100 - Darkened for better contrast */
 }
 
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
   font-feature-settings: "rlig" 1, "calt" 1;
-  /* Better typography rendering */
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Custom strong shadow for better module differentiation */
+  .shadow-strong {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
   }
 
   /* Hide number input spinners */

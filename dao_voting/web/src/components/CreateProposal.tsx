@@ -5,14 +5,29 @@ import { useWeb3 } from '@/context/Web3Context';
 import { useContracts } from '@/hooks/useContracts';
 import { useDAOBalance } from '@/hooks/useDAOBalance';
 import { parseEther, isAddress, formatEther } from 'ethers';
+import { FORWARDER_ABI, FORWARDER_ADDRESS, DAO_ADDRESS } from '@/lib/contracts';
+import { buildCreateProposalRequest, signMetaTxRequest } from '@/lib/meta-tx';
+import { ethers } from 'ethers';
+import {
+  FileText,
+  User,
+  Rocket,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  Calendar,
+  Wallet
+} from 'lucide-react';
 
 export default function CreateProposal() {
-  const { account } = useWeb3();
-  const { daoContract } = useContracts();
+  const { account, signer } = useWeb3();
+  const { daoContract, forwarderContract } = useContracts();
   const { balance, totalBalance, refresh: refreshBalance } = useDAOBalance();
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [days, setDays] = useState('7');
+  const [description, setDescription] = useState('');
+  const [useGasless, setUseGasless] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -44,15 +59,61 @@ export default function CreateProposal() {
 
     try {
       const amountWei = parseEther(amount);
-      const deadline = Math.floor(Date.now() / 1000) + parseInt(days) * 24 * 60 * 60;
 
-      const tx = await daoContract.createProposal(recipient, amountWei, deadline);
-      const receipt = await tx.wait();
+      // Get current block timestamp from provider to ensure deadline is relative to chain time
+      const block = await daoContract.runner?.provider?.getBlock('latest');
+      const currentTimestamp = block ? block.timestamp : Math.floor(Date.now() / 1000);
 
-      setSuccess(`¡Propuesta creada exitosamente!`);
+      const deadline = currentTimestamp + parseInt(days) * 24 * 60 * 60;
+
+      if (useGasless) {
+        if (!forwarderContract) return;
+
+        // Use helper to build request
+        // Note: buildCreateProposalRequest expects 'deadline' as votingDuration because contract uses it directly
+        const requestInput = await buildCreateProposalRequest(
+          await daoContract.getAddress(),
+          account,
+          recipient,
+          amountWei,
+          deadline,
+          description
+        );
+
+        // Sign using helper
+        const { signature, request } = await signMetaTxRequest(signer, forwarderContract, requestInput);
+
+        // Send to Relayer API
+        const response = await fetch('/api/relay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            request: {
+              ...request,
+              value: request.value.toString(),
+              gas: request.gas.toString(),
+              nonce: request.nonce.toString(),
+            },
+            signature
+          }),
+        });
+
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || 'Relay failed');
+
+        setSuccess(`¡Propuesta creada exitosamente (Gasless)! Tx: ${result.txHash.slice(0, 10)}...`);
+
+      } else {
+        // Standard transaction
+        const tx = await daoContract.createProposal(recipient, amountWei, deadline, description);
+        await tx.wait();
+        setSuccess(`¡Propuesta creada exitosamente!`);
+      }
+
       setRecipient('');
       setAmount('');
       setDays('7');
+      setDescription('');
       refreshBalance();
     } catch (err: any) {
       console.error('Error creating proposal:', err);
@@ -85,10 +146,10 @@ export default function CreateProposal() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+    <div className="bg-white rounded-2xl shadow-strong border border-slate-200 p-8">
       <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
         <span className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-3">
-          📝
+          <FileText className="w-6 h-6" />
         </span>
         Crear Nueva Propuesta
       </h2>
@@ -108,9 +169,21 @@ export default function CreateProposal() {
       </div>
 
       {!canCreateProposal() && (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-4">
-          <p className="font-semibold">⚠️ Balance insuficiente</p>
-          <p className="text-sm">Necesitas al menos 10% del balance total del DAO ({((totalBalance * 10n) / 100n).toString()} wei) para crear propuestas.</p>
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Balance insuficiente para crear propuestas</p>
+            <p className="text-sm mt-1">
+              Necesitas el 10% del total del DAO.
+              <br />
+              <strong>Requerido:</strong> {formatEther((totalBalance * 10n) / 100n)} ETH
+              <br />
+              <strong>Tienes:</strong> {formatEther(balance)} ETH
+            </p>
+            <p className="text-sm mt-2 font-medium">
+              Por favor, deposita más fondos en el panel de "Financiar DAO" para habilitar esta función.
+            </p>
+          </div>
         </div>
       )}
 
@@ -130,7 +203,7 @@ export default function CreateProposal() {
               required
             />
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <span className="text-slate-400">👤</span>
+              <User className="w-5 h-5 text-slate-400" />
             </div>
           </div>
         </div>
@@ -179,17 +252,45 @@ export default function CreateProposal() {
           </div>
         </div>
 
+        <div>
+          <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-2">
+            Descripción
+          </label>
+          <textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe the proposal..."
+            rows={4}
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-sm resize-none"
+            required
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="useGasless"
+            checked={useGasless}
+            onChange={(e) => setUseGasless(e.target.checked)}
+            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+          />
+          <label htmlFor="useGasless" className="text-sm text-slate-700 font-medium select-none cursor-pointer">
+            Use gasless transaction (relayer pays gas)
+          </label>
+        </div>
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
-            <span className="mt-0.5">⚠️</span>
-            <span>{error}</span>
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+            <span className="mt-0.5">{error}</span>
           </div>
         )}
 
         {success && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
-            <span className="mt-0.5">✅</span>
-            <span>{success}</span>
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+            <span className="mt-0.5">{success}</span>
           </div>
         )}
 
@@ -200,16 +301,13 @@ export default function CreateProposal() {
         >
           {loading ? (
             <>
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+              <Loader2 className="animate-spin h-5 w-5 text-white" />
               Creando Propuesta...
             </>
           ) : (
             <>
-              <span>🚀</span>
-              Crear Propuesta
+              <Rocket className="w-5 h-5" />
+              Crear Propuesta {useGasless ? '(Gasless)' : ''}
             </>
           )}
         </button>

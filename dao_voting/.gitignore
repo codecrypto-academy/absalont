@@ -4,6 +4,7 @@ sc/out/
 sc/broadcast/*/31337/
 sc/broadcast/**/dry-run/
 sc/.env
+sc/lib/*
 
 # Frontend
 web/node_modules/

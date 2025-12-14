@@ -6,6 +6,7 @@ export function useProposals() {
   const { daoContract } = useContracts();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentBlockTime, setCurrentBlockTime] = useState<number>(0);
   const isInitialized = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -15,7 +16,17 @@ export function useProposals() {
     }
     try {
       setLoading(true);
-      const count = await daoContract.getProposalCount();
+
+      // Fetch timestamp and proposals in parallel
+      const [count, block] = await Promise.all([
+        daoContract.getProposalCount(),
+        daoContract.runner?.provider?.getBlock('latest')
+      ]);
+
+      if (block) {
+        setCurrentBlockTime(block.timestamp);
+      }
+
       const proposalPromises = [];
       for (let i = 1; i <= Number(count); i++) {
         proposalPromises.push(daoContract.getProposal(i));
@@ -53,5 +64,5 @@ export function useProposals() {
     };
   }, [daoContract, refresh]);
 
-  return { proposals, loading, refresh };
+  return { proposals, loading, refresh, currentBlockTime };
 }
