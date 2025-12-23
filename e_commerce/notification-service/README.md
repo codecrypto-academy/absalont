@@ -1,44 +1,49 @@
 # Notification Service
 
-Servicio de notificaciones por email para el sistema e-commerce.
+Servicio de notificaciones por email para el sistema e-commerce con soporte para órdenes y pagos.
 
-## Características
+## 🚀 Características
 
-- 📧 Notificaciones por email cuando se crea una invoice
-- 💰 Notificaciones de pagos recibidos
-- 📊 Reportes diarios de ventas
-- 🔔 Sistema de suscripciones para empresas y clientes
+- 📧 **Notificaciones de Órdenes**: Alerta cuando se crea una orden
+- 💰 **Confirmación de Pagos**: Confirmación cuando se procesa un pago
+- 📊 **Reportes Diarios**: Reporte automático de ventas cada mañana
+- 🔔 **Sistema de Suscripciones**: Empresas y clientes pueden suscribirse
+- 🎨 **Emails HTML Profesionales**: Templates responsivos y atractivos
+- ✅ **Conversión Correcta de Precios**: Soporta 6 decimales (euros)
 
-## Instalación
+## 🔧 Instalación
 
 ```bash
 npm install
 ```
 
-## Configuración
+## ⚙️ Configuración
 
-1. Copiar `.env.example` a `.env`
-2. Configurar SMTP (Gmail, SendGrid, etc.)
-3. Configurar dirección del contrato
+El archivo `.env` ya incluye la configuración correcta:
 
-### Configuración Gmail
+```dotenv
+PORT=6005
+RPC_URL=http://localhost:8545
+ECOMMERCE_CONTRACT_ADDRESS=0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu-email@gmail.com
+SMTP_PASS=tu-app-password
+```
 
-1. Ir a tu cuenta de Google
-2. Activar 2FA
-3. Generar "App Password"
-4. Usar esa contraseña en `SMTP_PASS`
-
-## Ejecución
+## 🏃 Ejecución
 
 ```bash
-# Desarrollo
+# Desarrollo (con hot reload)
 npm run dev
 
 # Producción
 npm start
 ```
 
-## API Endpoints
+Accede al dashboard en: **http://localhost:6005**
+
+## 📡 API Endpoints
 
 ### Suscribir Empresa
 
@@ -60,85 +65,64 @@ POST /api/subscribe/customer
 }
 ```
 
+### Ver Suscripciones
+
+```bash
+GET /api/subscriptions
+```
+
+### Enviar Email de Prueba
+
+```bash
+POST /api/test-email
+{
+  "to": "email@example.com",
+  "subject": "Test",
+  "message": "Mensaje"
+}
+```
+
 ### Health Check
 
 ```bash
 GET /health
 ```
 
-## Eventos Escuchados
+## 📧 Eventos Soportados
 
-- `InvoiceCreated`: Se envía email a empresa y cliente
-- `PaymentProcessed`: Se confirma pago a ambas partes
-- Reporte diario: Cada día a las 9:00 AM
+- ✅ `InvoiceCreated`: Se envía email a empresa y cliente cuando se crea una orden
+- ✅ `PaymentProcessed`: Se confirma pago a ambas partes cuando se procesa el pago
+- ✅ Reporte diario: Cada día a las 9:00 AM (automático)
 
-## Ejemplos de Notificaciones
+## 💡 Tips
 
-### Nueva Orden (a Empresa)
-```
-Asunto: Nueva orden #123
-Contenido: Detalles de la orden, cliente, monto
-```
+- Los precios se convierten con **6 decimales** (correcto para euros)
+- Plantillas HTML responsivas y profesionales
+- Direcciones blockchain ocultas parcialmente por privacidad
+- Revisa la carpeta de spam si no recibes emails
+- Los reportes diarios se envían automáticamente
 
-### Orden Confirmada (a Cliente)
-```
-Asunto: Orden confirmada #123
-Contenido: Detalles y link para pagar
-```
+## 🚨 Troubleshooting
 
-### Pago Recibido (a Empresa)
-```
-Asunto: ¡Pago recibido! Orden #123
-Contenido: Confirmación de pago y monto
-```
+### No recibo emails
 
-### Pago Exitoso (a Cliente)
-```
-Asunto: ¡Pago exitoso! Orden #123
-Contenido: Confirmación y número de seguimiento
-```
+1. Verifica la suscripción: `GET /api/subscriptions`
+2. Envía un email de prueba: `POST /api/test-email`
+3. Revisa la carpeta de spam
+4. Verifica los logs del servicio
 
-## Integración con Frontend
+### SMTP Error
 
-```typescript
-// Suscribir empresa
-fetch('http://localhost:6005/api/subscribe/company', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    companyId: 1,
-    email: 'empresa@example.com'
-  })
-});
+- Verifica credenciales en `.env`
+- Si usas Gmail, usa "App Password" (no contraseña normal)
+- Genera una nueva "App Password" si es necesario
 
-// Suscribir cliente
-fetch('http://localhost:6005/api/subscribe/customer', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    address: account,
-    email: 'cliente@example.com'
-  })
-});
-```
+### Sin conexión a blockchain
 
-## Producción
+- Verifica que Anvil esté corriendo
+- Verifica `ECOMMERCE_CONTRACT_ADDRESS` es correcta
+- Verifica `RPC_URL` es accesible
 
-Para producción, recomendamos:
+## 📚 Documentación Completa
 
-- Usar base de datos (PostgreSQL, MongoDB)
-- Implementar cola de mensajes (RabbitMQ, Redis)
-- Usar servicio de email profesional (SendGrid, AWS SES)
-- Agregar autenticación a los endpoints
-- Implementar rate limiting
-- Agregar logs estructurados
-
-## Alternativas
-
-En lugar de emails, también se podría implementar:
-
-- Push notifications (Firebase Cloud Messaging)
-- Notificaciones in-app
-- SMS (Twilio)
-- Webhooks
-- Discord/Telegram bots
+Ver `NOTIFICATION_SERVICE_GUIDE.md` para guía detallada de uso e integración
