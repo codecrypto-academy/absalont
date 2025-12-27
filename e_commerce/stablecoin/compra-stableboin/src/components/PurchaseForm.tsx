@@ -10,23 +10,19 @@ interface PurchaseFormProps {
 export default function PurchaseForm({ account }: PurchaseFormProps) {
   const stripe = useStripe()
   const elements = useElements()
-  
+
   const [amount, setAmount] = useState<string>('100')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<string>('')
+  const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' | '' }>({ text: '', type: '' })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!stripe || !elements) {
-      return
-    }
+    if (!stripe || !elements) return
 
     setLoading(true)
-    setMessage('')
+    setMessage({ text: '', type: '' })
 
     try {
-      // 1. Crear Payment Intent
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -37,12 +33,8 @@ export default function PurchaseForm({ account }: PurchaseFormProps) {
       })
 
       const { clientSecret, error } = await response.json()
+      if (error) throw new Error(error)
 
-      if (error) {
-        throw new Error(error)
-      }
-
-      // 2. Confirmar pago con Stripe
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
         clientSecret,
         {
@@ -52,11 +44,8 @@ export default function PurchaseForm({ account }: PurchaseFormProps) {
         }
       )
 
-      if (stripeError) {
-        throw new Error(stripeError.message)
-      }
+      if (stripeError) throw new Error(stripeError.message)
 
-      // 3. Mint tokens
       if (paymentIntent?.status === 'succeeded') {
         const mintResponse = await fetch('/api/mint-tokens', {
           method: 'POST',
@@ -69,88 +58,105 @@ export default function PurchaseForm({ account }: PurchaseFormProps) {
         })
 
         const mintResult = await mintResponse.json()
+        if (mintResult.error) throw new Error(mintResult.error)
 
-        if (mintResult.error) {
-          throw new Error(mintResult.error)
-        }
-
-        setMessage(`¡Éxito! ${amount} EURT han sido acreditados a tu wallet.`)
+        setMessage({ text: `¡Éxito! ${amount} EURT han sido acreditados a tu wallet.`, type: 'success' })
         setAmount('100')
         elements.getElement(CardElement)?.clear()
       }
     } catch (error: any) {
-      setMessage(`Error: ${error.message}`)
+      setMessage({ text: `Error: ${error.message}`, type: 'error' })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">Comprar Tokens</h2>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Cantidad de EUR (= cantidad de EURT)
-        </label>
-        <input
-          type="number"
-          min="1"
-          step="0.01"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          required
-        />
-        <p className="text-sm text-gray-500 mt-1">
-          Recibirás: {amount} EURT
-        </p>
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-white">Completar Compra</h2>
+        <p className="text-slate-400 text-sm">Ingresa los detalles para el mint de EURT.</p>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Tarjeta de Crédito
+      <div className="space-y-4">
+        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
+          Monto en Euros
         </label>
-        <div className="border border-gray-300 rounded-lg p-4">
+        <div className="relative">
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="glass-input w-full pl-12 text-2xl font-black"
+            required
+          />
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">€</span>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/5 px-2 py-1 rounded text-xs font-bold text-slate-500">
+            EUR
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-indigo-400 text-sm font-medium">
+          <span className="animate-pulse">↓</span>
+          <span>Recibirás aproximadamente {amount} EURT</span>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
+          Información de Pago
+        </label>
+        <div className="glass-input !p-4">
           <CardElement
             options={{
               style: {
                 base: {
                   fontSize: '16px',
-                  color: '#424770',
+                  color: '#ffffff',
                   '::placeholder': {
-                    color: '#aab7c4',
+                    color: 'rgba(255, 255, 255, 0.3)',
                   },
+                  iconColor: '#6366f1',
                 },
                 invalid: {
-                  color: '#9e2146',
+                  color: '#f43f5e',
                 },
               },
             }}
           />
         </div>
-        <p className="text-xs text-gray-500 mt-2">
-          Tarjeta de prueba: 4242 4242 4242 4242 | Cualquier fecha futura | Cualquier CVC
+        <p className="text-[10px] text-slate-500 italic">
+          * Para pruebas usa: 4242 4242 4242 4242
         </p>
       </div>
 
       <button
         type="submit"
         disabled={!stripe || loading}
-        className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition"
+        className="btn-primary w-full flex items-center justify-center gap-2 h-14"
       >
-        {loading ? 'Procesando...' : `Pagar €${amount}`}
+        {loading ? (
+          <>
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <span>Procesando...</span>
+          </>
+        ) : (
+          `Pagar y Recibir €${amount}`
+        )}
       </button>
 
-      {message && (
+      {message.text && (
         <div
-          className={`p-4 rounded-lg ${
-            message.includes('Éxito')
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
-          }`}
+          className={`p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 duration-300 ${message.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+            }`}
         >
-          {message}
+          <div className="flex items-center gap-3">
+            <span className="text-xl">{message.type === 'success' ? '✅' : '❌'}</span>
+            <p className="text-sm font-medium">{message.text}</p>
+          </div>
         </div>
       )}
     </form>

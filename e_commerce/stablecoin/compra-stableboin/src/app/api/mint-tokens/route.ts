@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Contract, JsonRpcProvider, Wallet } from 'ethers'
+import { Contract, JsonRpcProvider, Wallet, parseUnits } from 'ethers'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
 
     const tokenContract = new Contract(tokenAddress, ERC20_ABI, wallet)
 
-    // Mint tokens (amount * 10^6 porque tiene 6 decimales)
-    const tokenAmount = BigInt(Math.round(amount * 1_000_000))
+    // Mint tokens (6 decimales para EURT)
+    const tokenAmount = parseUnits(amount.toString(), 6)
     const tx = await tokenContract.mint(walletAddress, tokenAmount)
     const receipt = await tx.wait()
 

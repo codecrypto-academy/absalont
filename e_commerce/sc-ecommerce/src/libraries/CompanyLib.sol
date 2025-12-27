@@ -5,6 +5,7 @@ library CompanyLib {
     struct Company {
         uint256 companyId;
         string name;
+        string description;
         address companyAddress; // Wallet donde recibe pagos
         string taxId;
         bool isActive;
@@ -17,18 +18,26 @@ library CompanyLib {
         uint256 companyCounter;
     }
 
-    event CompanyRegistered(uint256 indexed companyId, string name, address companyAddress);
+    event CompanyRegistered(
+        uint256 indexed companyId,
+        string name,
+        address companyAddress
+    );
     event CompanyUpdated(uint256 indexed companyId);
 
     function registerCompany(
         CompanyStorage storage self,
         string memory name,
+        string memory description,
         address companyAddress,
         string memory taxId
     ) internal returns (uint256) {
         require(bytes(name).length > 0, "Company name required");
         require(companyAddress != address(0), "Invalid address");
-        require(self.addressToCompanyId[companyAddress] == 0, "Company already registered");
+        require(
+            self.addressToCompanyId[companyAddress] == 0,
+            "Company already registered"
+        );
 
         self.companyCounter++;
         uint256 newCompanyId = self.companyCounter;
@@ -36,6 +45,7 @@ library CompanyLib {
         self.companies[newCompanyId] = Company({
             companyId: newCompanyId,
             name: name,
+            description: description,
             companyAddress: companyAddress,
             taxId: taxId,
             isActive: true,
@@ -53,7 +63,10 @@ library CompanyLib {
         CompanyStorage storage self,
         uint256 companyId
     ) internal view returns (Company memory) {
-        require(companyId > 0 && companyId <= self.companyCounter, "Invalid company ID");
+        require(
+            companyId > 0 && companyId <= self.companyCounter,
+            "Invalid company ID"
+        );
         return self.companies[companyId];
     }
 
@@ -70,13 +83,18 @@ library CompanyLib {
         CompanyStorage storage self,
         uint256 companyId,
         string memory name,
+        string memory description,
         string memory taxId,
         bool isActive
     ) internal {
-        require(companyId > 0 && companyId <= self.companyCounter, "Invalid company ID");
-        
+        require(
+            companyId > 0 && companyId <= self.companyCounter,
+            "Invalid company ID"
+        );
+
         Company storage company = self.companies[companyId];
         company.name = name;
+        company.description = description;
         company.taxId = taxId;
         company.isActive = isActive;
 

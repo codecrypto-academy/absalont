@@ -30,27 +30,36 @@ contract Ecommerce {
 
     function registerCompany(
         string memory name,
+        string memory description,
         string memory taxId
     ) external returns (uint256) {
-        return companies.registerCompany(name, msg.sender, taxId);
+        return companies.registerCompany(name, description, msg.sender, taxId);
     }
 
-    function getCompany(uint256 companyId) external view returns (CompanyLib.Company memory) {
+    function getCompany(
+        uint256 companyId
+    ) external view returns (CompanyLib.Company memory) {
         return companies.getCompany(companyId);
     }
 
-    function getCompanyByAddress(address companyAddress) external view returns (CompanyLib.Company memory) {
+    function getCompanyByAddress(
+        address companyAddress
+    ) external view returns (CompanyLib.Company memory) {
         return companies.getCompanyByAddress(companyAddress);
     }
 
     function updateCompany(
         uint256 companyId,
         string memory name,
+        string memory description,
         string memory taxId,
         bool isActive
     ) external {
-        require(companies.isCompanyOwner(companyId, msg.sender), "Not company owner");
-        companies.updateCompany(companyId, name, taxId, isActive);
+        require(
+            companies.isCompanyOwner(companyId, msg.sender),
+            "Not company owner"
+        );
+        companies.updateCompany(companyId, name, description, taxId, isActive);
     }
 
     function getCompanyCount() external view returns (uint256) {
@@ -67,8 +76,39 @@ contract Ecommerce {
         uint256 stock,
         string memory ipfsImageHash
     ) external returns (uint256) {
-        require(companies.isCompanyOwner(companyId, msg.sender), "Not company owner");
-        return products.addProduct(companyId, name, description, price, stock, ipfsImageHash);
+        require(
+            companies.isCompanyOwner(companyId, msg.sender),
+            "Not company owner"
+        );
+        return
+            products.addProduct(
+                companyId,
+                name,
+                description,
+                price,
+                stock,
+                ipfsImageHash
+            );
+    }
+
+    function addProductUnsafe(
+        uint256 companyId,
+        string memory name,
+        string memory description,
+        uint256 price,
+        uint256 stock,
+        string memory ipfsImageHash
+    ) external returns (uint256) {
+        require(companies.companyExists(companyId), "Company not found");
+        return
+            products.addProduct(
+                companyId,
+                name,
+                description,
+                price,
+                stock,
+                ipfsImageHash
+            );
     }
 
     function updateProduct(
@@ -80,15 +120,47 @@ contract Ecommerce {
         bool isActive
     ) external {
         ProductLib.Product memory product = products.getProduct(productId);
-        require(companies.isCompanyOwner(product.companyId, msg.sender), "Not company owner");
-        products.updateProduct(productId, name, description, price, stock, isActive);
+        require(
+            companies.isCompanyOwner(product.companyId, msg.sender),
+            "Not company owner"
+        );
+        products.updateProduct(
+            productId,
+            name,
+            description,
+            price,
+            stock,
+            isActive
+        );
     }
 
-    function getProduct(uint256 productId) external view returns (ProductLib.Product memory) {
+    function updateProductUnsafe(
+        uint256 productId,
+        string memory name,
+        string memory description,
+        uint256 price,
+        uint256 stock,
+        bool isActive
+    ) external {
+        products.updateProduct(
+            productId,
+            name,
+            description,
+            price,
+            stock,
+            isActive
+        );
+    }
+
+    function getProduct(
+        uint256 productId
+    ) external view returns (ProductLib.Product memory) {
         return products.getProduct(productId);
     }
 
-    function getCompanyProducts(uint256 companyId) external view returns (uint256[] memory) {
+    function getCompanyProducts(
+        uint256 companyId
+    ) external view returns (uint256[] memory) {
         return products.getCompanyProducts(companyId);
     }
 
@@ -96,14 +168,20 @@ contract Ecommerce {
         return products.productCounter;
     }
 
-    function getAllProducts() external view returns (ProductLib.Product[] memory) {
+    function getAllProducts()
+        external
+        view
+        returns (ProductLib.Product[] memory)
+    {
         uint256 count = products.productCounter;
-        ProductLib.Product[] memory allProducts = new ProductLib.Product[](count);
-        
+        ProductLib.Product[] memory allProducts = new ProductLib.Product[](
+            count
+        );
+
         for (uint256 i = 1; i <= count; i++) {
             allProducts[i - 1] = products.getProduct(i);
         }
-        
+
         return allProducts;
     }
 
@@ -113,7 +191,7 @@ contract Ecommerce {
         ProductLib.Product memory product = products.getProduct(productId);
         require(product.isActive, "Product not active");
         require(product.stock >= quantity, "Insufficient stock");
-        
+
         carts.addToCart(msg.sender, productId, quantity, product.price);
     }
 
@@ -121,11 +199,16 @@ contract Ecommerce {
         carts.removeFromCart(msg.sender, productId);
     }
 
-    function updateCartQuantity(uint256 productId, uint256 newQuantity) external {
+    function updateCartQuantity(
+        uint256 productId,
+        uint256 newQuantity
+    ) external {
         carts.updateQuantity(msg.sender, productId, newQuantity);
     }
 
-    function getCart(address customer) external view returns (CartLib.CartItem[] memory) {
+    function getCart(
+        address customer
+    ) external view returns (CartLib.CartItem[] memory) {
         return carts.getCart(customer);
     }
 
@@ -139,29 +222,42 @@ contract Ecommerce {
 
     // ========== INVOICE FUNCTIONS ==========
 
-    function createInvoiceFromCart(uint256 companyId) external returns (uint256) {
+    function createInvoiceFromCart(
+        uint256 companyId
+    ) external returns (uint256) {
         require(companies.companyExists(companyId), "Company not found");
-        
+
         CartLib.CartItem[] memory cart = carts.getCart(msg.sender);
         require(cart.length > 0, "Cart is empty");
 
         // Calcular total y verificar que todos los productos son de la misma empresa
         uint256 total = 0;
         for (uint256 i = 0; i < cart.length; i++) {
-            ProductLib.Product memory product = products.getProduct(cart[i].productId);
-            require(product.companyId == companyId, "Products from different companies");
+            ProductLib.Product memory product = products.getProduct(
+                cart[i].productId
+            );
+            require(
+                product.companyId == companyId,
+                "Products from different companies"
+            );
             require(product.isActive, "Product not active");
             require(product.stock >= cart[i].quantity, "Insufficient stock");
-            
+
             total += cart[i].price * cart[i].quantity;
         }
 
         // Crear invoice
-        uint256 invoiceId = invoices.createInvoice(companyId, msg.sender, total);
+        uint256 invoiceId = invoices.createInvoice(
+            companyId,
+            msg.sender,
+            total
+        );
 
         // Agregar items a la invoice
         for (uint256 i = 0; i < cart.length; i++) {
-            ProductLib.Product memory product = products.getProduct(cart[i].productId);
+            ProductLib.Product memory product = products.getProduct(
+                cart[i].productId
+            );
             invoices.addInvoiceItem(
                 invoiceId,
                 cart[i].productId,
@@ -180,14 +276,20 @@ contract Ecommerce {
         return invoiceId;
     }
 
-    function getInvoice(uint256 invoiceId) external view returns (
-        uint256 id,
-        uint256 companyId,
-        address customerAddress,
-        uint256 totalAmount,
-        uint256 timestamp,
-        bool isPaid
-    ) {
+    function getInvoice(
+        uint256 invoiceId
+    )
+        external
+        view
+        returns (
+            uint256 id,
+            uint256 companyId,
+            address customerAddress,
+            uint256 totalAmount,
+            uint256 timestamp,
+            bool isPaid
+        )
+    {
         InvoiceLib.Invoice storage invoice = invoices.getInvoice(invoiceId);
         return (
             invoice.invoiceId,
@@ -199,16 +301,22 @@ contract Ecommerce {
         );
     }
 
-    function getInvoiceItems(uint256 invoiceId) external view returns (InvoiceLib.InvoiceItem[] memory) {
+    function getInvoiceItems(
+        uint256 invoiceId
+    ) external view returns (InvoiceLib.InvoiceItem[] memory) {
         InvoiceLib.Invoice storage invoice = invoices.getInvoice(invoiceId);
         return invoice.items;
     }
 
-    function getCustomerInvoices(address customer) external view returns (uint256[] memory) {
+    function getCustomerInvoices(
+        address customer
+    ) external view returns (uint256[] memory) {
         return invoices.getCustomerInvoices(customer);
     }
 
-    function getCompanyInvoices(uint256 companyId) external view returns (uint256[] memory) {
+    function getCompanyInvoices(
+        uint256 companyId
+    ) external view returns (uint256[] memory) {
         return invoices.getCompanyInvoices(companyId);
     }
 
@@ -224,7 +332,9 @@ contract Ecommerce {
         require(invoice.customerAddress == customer, "Invalid customer");
         require(invoice.totalAmount == amount, "Invalid amount");
 
-        CompanyLib.Company memory company = companies.getCompany(invoice.companyId);
+        CompanyLib.Company memory company = companies.getCompany(
+            invoice.companyId
+        );
         require(company.isActive, "Company not active");
 
         // Procesar pago
@@ -237,7 +347,9 @@ contract Ecommerce {
         );
 
         // Marcar invoice como pagada
-        bytes32 txHash = keccak256(abi.encodePacked(block.timestamp, customer, amount));
+        bytes32 txHash = keccak256(
+            abi.encodePacked(block.timestamp, customer, amount)
+        );
         invoices.markAsPaid(invoiceId, txHash);
     }
 

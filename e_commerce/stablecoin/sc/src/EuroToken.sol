@@ -30,7 +30,7 @@ contract EuroToken is ERC20, Ownable {
     function mint(address to, uint256 amount) external onlyOwner {
         require(to != address(0), "Cannot mint to zero address");
         require(amount > 0, "Amount must be greater than 0");
-        
+
         _mint(to, amount);
         emit TokensMinted(to, amount, block.timestamp);
     }
@@ -44,7 +44,7 @@ contract EuroToken is ERC20, Ownable {
         require(from != address(0), "Cannot burn from zero address");
         require(amount > 0, "Amount must be greater than 0");
         require(balanceOf(from) >= amount, "Insufficient balance");
-        
+
         _burn(from, amount);
         emit TokensBurned(from, amount, block.timestamp);
     }
@@ -56,7 +56,7 @@ contract EuroToken is ERC20, Ownable {
     function burnOwn(uint256 amount) external {
         require(amount > 0, "Amount must be greater than 0");
         require(balanceOf(msg.sender) >= amount, "Insufficient balance");
-        
+
         _burn(msg.sender, amount);
         emit TokensBurned(msg.sender, amount, block.timestamp);
     }
