@@ -22,13 +22,13 @@ export function useContract() {
     async (tokenAddress: string, account: string): Promise<string> => {
       try {
         if (!wallet.provider) throw new Error('Provider no disponible');
-        
+
         const contract = new ethers.Contract(
           tokenAddress,
           ERC20_ABI,
           wallet.provider
         );
-        
+
         const balance = await contract.balanceOf(account);
         return ethers.formatEther(balance);
       } catch (err) {
@@ -44,13 +44,13 @@ export function useContract() {
     async (account: string): Promise<string> => {
       try {
         if (!wallet.provider) throw new Error('Provider no disponible');
-        
+
         const contract = new ethers.Contract(
           ESCROW_ADDRESS,
           ESCROW_ABI,
           wallet.provider
         );
-        
+
         const balance = await contract.getEscrowBalance(account);
         return ethers.formatEther(balance);
       } catch (err) {
@@ -129,6 +129,7 @@ export function useContract() {
 
     // Métodos de token
     addToken,
+    getAllowedTokens: escrow.getAllowedTokens,
 
     // Estado general
     loading: escrow.loading || loading,

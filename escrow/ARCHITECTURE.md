@@ -37,34 +37,92 @@ enum OperationStatus { PENDING, COMPLETED, CANCELLED }
 - `cancelOperation()` - Cancelar intercambio
 - `getOperationDetails()` - Obtener detalles
 
-### 2. Frontend (Next.js)
+## Estructura del Proyecto
 
-**Estructura:**
 ```
-src/
-├── app/
-│   ├── page.tsx          # Página principal
-│   ├── layout.tsx        # Layout global
-│   └── globals.css       # Estilos
-├── components/
-│   ├── WalletSelector/   # Conectar billetera
-│   ├── EscrowForm/       # Crear/completar operación
-│   ├── OperationsList/   # Listar operaciones
-│   ├── Debug/            # Panel de debug
-│   └── TokenManager/     # Gestión de tokens
-├── context/
-│   └── WalletContext.tsx # Estado global de wallet
-├── hooks/
-│   ├── useEscrow.ts      # Hook para interactuar con contrato
-│   ├── useTokens.ts      # Hook para tokens ERC20
-│   └── useBalance.ts     # Hook para balances
-├── lib/
-│   ├── ethers.ts         # Inicialización ethers
-│   └── constants.ts      # Constantes
-└── types/
-    ├── ethereum.d.ts     # Tipos de Web3
-    └── index.ts          # Tipos de app
+escrow/
+├── sc/                                  # Smart Contracts (Foundry)
+│   ├── src/
+│   │   ├── Escrow.sol                  # ✅ Contrato principal
+│   │   ├── MockERC20.sol               # ✅ Mock para testing
+│   │   └── interfaces/
+│   │       └── IEscrow.sol             # ✅ Interfaz del contrato
+│   ├── script/
+│   │   └── Deploy.s.sol                # ✅ Script de deployment
+│   ├── test/
+│   │   └── Escrow.t.sol                # ✅ Tests del contrato
+│   ├── foundry.toml
+│   └── remappings.txt
+│
+└── web/                                 # Frontend (Next.js 14)
+    ├── src/
+    │   ├── app/
+    │   │   ├── layout.tsx               # Layout principal
+    │   │   ├── page.tsx                 # Página de inicio
+    │   │   └── globals.css              # Estilos globales
+    │   │
+    │   ├── components/                  # ✅ Componentes creados
+    │   │   ├── ConnectionButton.tsx     # Conectar/desconectar wallet
+    │   │   ├── AddToken.tsx             # Agregar tokens permitidos
+    │   │   ├── CreateOperation.tsx      # Crear operación de intercambio
+    │   │   ├── OperationsList.tsx       # Listar operaciones activas
+    │   │   ├── BalanceDebug.tsx         # Debug de balances
+    │   │   └── WalletSelector.tsx       # Selector de wallet
+    │   │
+    │   ├── context/
+    │   │   └── WalletContext.tsx        # ✅ Contexto de wallet (ethers.js)
+    │   │
+    │   ├── hooks/
+    │   │   ├── useContract.ts           # ✅ Hook unificado (nuevo)
+    │   │   ├── useEscrow.ts             # Hook para operaciones escrow
+    │   │   ├── useToken.ts              # Hook para operaciones ERC20
+    │   │   └── useBalance.ts            # Hook para balances
+    │   │
+    │   ├── types/
+    │   │   ├── escrow.ts                # ✅ Tipos Escrow (nuevo)
+    │   │   ├── index.ts                 # Tipos generales
+    │   │   └── ethereum.d.ts            # Types de window.ethereum
+    │   │
+    │   └── lib/
+    │       ├── constants.ts             # Direcciones y ABIs
+    │       └── ethers.ts                # Utilidades de ethers.js
+    │
+    ├── package.json
+    ├── tsconfig.json
+    ├── next.config.js
+    ├── postcss.config.js
+    ├── tailwind.config.js
+    └── .env.example
 ```
+
+## Componentes Creados ✅
+
+### 1. **ConnectionButton.tsx**
+- Conecta/desconecta la wallet
+- Muestra dirección acortada cuando está conectada
+- Estilos visuales para estados conectado/desconectado
+
+### 2. **AddToken.tsx**
+- Permite agregar tokens permitidos al contrato
+- Solo Owner puede ejecutar esta operación
+- Validaciones de dirección
+
+### 3. **CreateOperation.tsx**
+- Formulario para crear operaciones de intercambio
+- Campos: Token A, Cantidad A, Token B, Cantidad B, Recipient
+- Integración con `useContract`
+
+### 4. **OperationsList.tsx**
+- Listado de operaciones pendientes
+- Botones para completar o cancelar operaciones
+- Auto-actualización cada 5 segundos
+- Muestra estado y detalles de cada operación
+
+### 5. **BalanceDebug.tsx**
+- Panel de debug expandible
+- Verifica balance de tokens específicos
+- Verifica balance en contrato Escrow
+- Útil para debugging durante desarrollo
 
 ### 3. Contratos de Dependencias
 

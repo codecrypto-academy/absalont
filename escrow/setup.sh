@@ -50,8 +50,8 @@ cd sc || exit 1
 
 if [ ! -d "lib/openzeppelin-contracts" ]; then
     print_step "Instalando dependencias de Foundry..."
-    forge install OpenZeppelin/openzeppelin-contracts --no-commit
-    forge install foundry-rs/forge-std --no-commit
+    forge install OpenZeppelin/openzeppelin-contracts@v4.9.3
+    forge install foundry-rs/forge-std
 fi
 
 print_step "Compilando contratos..."
@@ -116,7 +116,7 @@ echo "   $ anvil"
 echo ""
 echo "2. Desplegar contratos (terminal 2):"
 echo "   $ cd escrow/sc"
-echo "   $ forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast"
+echo "   $ forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 echo ""
 echo "3. Actualizar web/.env.local con las direcciones desplegadas"
 echo ""

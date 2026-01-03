@@ -25,11 +25,49 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [chainId, setChainId] = useState<number | null>(null);
   const [connected, setConnected] = useState(false);
 
+  // Asegurar red correcta
+  const ensureCorrectNetwork = useCallback(async (targetProvider?: ethers.BrowserProvider) => {
+    const activeProvider = targetProvider || provider;
+    if (!activeProvider) {
+      console.warn('ensureCorrectNetwork: No provider available');
+      return;
+    }
+
+    try {
+      const network = await activeProvider.getNetwork();
+      const currentChainId = Number(network.chainId);
+
+      console.log('Current Chain ID:', currentChainId, 'Target Chain ID:', CHAIN_ID);
+
+      if (currentChainId !== CHAIN_ID) {
+        console.log('Switching to correct network...');
+        try {
+          await switchNetwork(CHAIN_ID);
+        } catch (error) {
+          console.warn('Switch failed, attempting to add network:', error);
+          // Si falla el cambio, intentar añadir la red
+          await addNetwork(CHAIN_ID, 'Anvil Local', RPC_URL);
+          await switchNetwork(CHAIN_ID);
+        }
+      }
+    } catch (error) {
+      console.error('Error changing red:', error);
+      throw error;
+    }
+  }, [provider]);
+
   // Conectar wallet
   const connect = useCallback(async () => {
+    console.log('Connecting wallet...');
     try {
+      if (typeof window === 'undefined' || !window.ethereum) {
+        throw new Error('MetaMask no está instalado');
+      }
+
       const accounts = await connectWallet();
-      const newProvider = new ethers.BrowserProvider(window.ethereum!);
+      console.log('Accounts connected:', accounts);
+
+      const newProvider = new ethers.BrowserProvider(window.ethereum);
       const newSigner = await newProvider.getSigner();
 
       setAccount(accounts[0]);
@@ -37,19 +75,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       setSigner(newSigner);
       setConnected(true);
 
-      // Obtener chain ID
+      // Obtener chain ID y asegurar red correcta inmediatamente
       const network = await newProvider.getNetwork();
-      setChainId(Number(network.chainId));
+      const currentChainId = Number(network.chainId);
+      setChainId(currentChainId);
 
-      // Cambiar a red correcta si es necesario
-      if (Number(network.chainId) !== CHAIN_ID) {
-        await ensureCorrectNetwork();
+      if (currentChainId !== CHAIN_ID) {
+        await ensureCorrectNetwork(newProvider);
       }
     } catch (error) {
       console.error('Error conectando wallet:', error);
       throw error;
     }
-  }, []);
+  }, [ensureCorrectNetwork]);
 
   // Desconectar
   const disconnect = useCallback(() => {
@@ -60,54 +98,43 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setConnected(false);
   }, []);
 
-  // Asegurar red correcta
-  const ensureCorrectNetwork = useCallback(async () => {
-    if (!provider) return;
-
-    try {
-      const network = await provider.getNetwork();
-      const currentChainId = Number(network.chainId);
-
-      if (currentChainId !== CHAIN_ID) {
-        try {
-          await switchNetwork(CHAIN_ID);
-        } catch (error) {
-          // Si falla el cambio, intentar añadir la red
-          await addNetwork(CHAIN_ID, 'Anvil Local', RPC_URL);
-          await switchNetwork(CHAIN_ID);
-        }
-      }
-    } catch (error) {
-      console.error('Error cambiando red:', error);
-      throw error;
-    }
-  }, [provider]);
+  const connectingRef = React.useRef(false);
 
   // Auto-conectar si estaba conectado
   useEffect(() => {
+    if (account || connectingRef.current) return;
+
     const autoConnect = async () => {
-      const account = await getConnectedAccount();
-      if (account) {
+      const storedAccount = await getConnectedAccount();
+      if (storedAccount && !connectingRef.current) {
         try {
+          connectingRef.current = true;
           await connect();
         } catch (error) {
-          console.error('Auto-connect failed:', error);
+          console.warn('Auto-connect failed:', error);
+        } finally {
+          connectingRef.current = false;
         }
       }
     };
 
     autoConnect();
-  }, [connect]);
+  }, [account, connect]);
 
   // Escuchar cambios de cuenta
   useEffect(() => {
     if (!window.ethereum) return;
 
-    const handleAccountsChanged = (accounts: string[]) => {
+    const handleAccountsChanged = async (accounts: string[]) => {
       if (accounts.length === 0) {
         disconnect();
-      } else if (accounts[0] !== account) {
-        setAccount(accounts[0]);
+      } else {
+        // Al cambiar de cuenta, refrescamos toda la conexión
+        try {
+          await connect();
+        } catch (error) {
+          console.error("Error refreshing account:", error);
+        }
       }
     };
 

@@ -2,6 +2,8 @@
 
 import { useWallet } from '@/context/WalletContext';
 import { useState } from 'react';
+import { Wallet, LogOut, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function WalletSelector() {
   const { account, connected, connect, disconnect, ensureCorrectNetwork } = useWallet();
@@ -13,7 +15,6 @@ export function WalletSelector() {
       setLoading(true);
       setError(null);
       await connect();
-      await ensureCorrectNetwork();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error connecting wallet');
     } finally {
@@ -29,29 +30,55 @@ export function WalletSelector() {
   const displayAccount = account ? `${account.slice(0, 6)}...${account.slice(-4)}` : '';
 
   return (
-    <div className="flex items-center gap-4">
-      {connected ? (
-        <>
-          <div className="text-sm font-mono bg-blue-100 px-4 py-2 rounded">
-            {displayAccount}
-          </div>
-          <button
-            onClick={handleDisconnect}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-4">
+        {connected ? (
+          <>
+            <div className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm font-mono font-bold text-white tracking-tight">
+                {displayAccount}
+              </span>
+            </div>
+            <button
+              onClick={handleDisconnect}
+              className="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all border border-rose-500/20 active:scale-95"
+              title="Desconectar"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </>
+        ) : (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleConnect}
+            disabled={loading}
+            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-600/20 disabled:bg-gray-800 disabled:text-gray-500"
           >
-            Desconectar
-          </button>
-        </>
-      ) : (
-        <button
-          onClick={handleConnect}
-          disabled={loading}
-          className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition disabled:bg-gray-400"
-        >
-          {loading ? 'Conectando...' : 'Conectar Wallet'}
-        </button>
-      )}
-      {error && <div className="text-red-500 text-sm">{error}</div>}
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Wallet className="w-4 h-4" />
+            )}
+            <span>{loading ? 'Conectando...' : 'Conectar Wallet'}</span>
+          </motion.button>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            className="flex items-center gap-2 text-[10px] text-rose-400 font-bold uppercase tracking-tight bg-rose-500/5 p-2 rounded-lg border border-rose-500/10"
+          >
+            <AlertCircle className="w-3 h-3" />
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

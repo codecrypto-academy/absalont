@@ -57,7 +57,7 @@ Abre otra **terminal nueva**:
 
 ```bash
 cd escrow/sc
-forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
 
 **Anota estas direcciones** (salida al final):
@@ -135,7 +135,7 @@ En MetaMask:
 1. Haz clic en el icono de cuenta (arriba a la derecha)
 2. Selecciona "Add account or import account"
 3. Pega clave privada de anvil:
-   - `0xac0974bec39a17e36ba4a6b4d238ff944bacb476cadccb1995d6d97f3d161601` (Cuenta 0)
+   - `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` (Cuenta 0)
    - `0x59c6995e6671c53d0c8a4211a37f3b0c0e4476178e899f382e89d807452cb6d` (Cuenta 1)
    - Y más en el output de `anvil`
 

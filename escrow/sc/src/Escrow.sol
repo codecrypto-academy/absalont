@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 /**
  * @title Escrow
  * @dev Sistema de intercambio seguro de tokens ERC20
- * 
+ *
  * Funcionalidades:
  * - Crear operaciones de intercambio
  * - Completar operaciones con garantía atómica
@@ -16,30 +16,35 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
  * - Gestionar tokens permitidos
  */
 contract Escrow is Ownable, ReentrancyGuard {
-    
     // ==================== TIPOS ====================
-    
-    enum OperationStatus { PENDING, COMPLETED, CANCELLED }
-    
-    struct Operation {
-        address initiator;           // Quien inicia la operación
-        address recipient;           // Quien completa la operación
-        uint256 amountA;             // Cantidad de Token A
-        uint256 amountB;             // Cantidad de Token B
-        address tokenA;              // Dirección de Token A
-        address tokenB;              // Dirección de Token B
-        OperationStatus status;      // Estado de la operación
-        uint256 createdAt;           // Timestamp de creación
+
+    enum OperationStatus {
+        PENDING,
+        COMPLETED,
+        CANCELLED
     }
-    
+
+    struct Operation {
+        address initiator; // Quien inicia la operación
+        address recipient; // Quien completa la operación
+        uint256 amountA; // Cantidad de Token A
+        uint256 amountB; // Cantidad de Token B
+        address tokenA; // Dirección de Token A
+        address tokenB; // Dirección de Token B
+        OperationStatus status; // Estado de la operación
+        uint256 createdAt; // Timestamp de creación
+        uint256 closedAt; // Timestamp de cierre (completada/cancelada)
+    }
+
     // ==================== ESTADO ====================
-    
+
     mapping(uint256 => Operation) public operations;
-    mapping(address => bool) public allowedTokens;
+    mapping(address => bool) public isTokenAllowed;
+    address[] public allowedTokensList;
     uint256 public operationCount;
-    
+
     // ==================== EVENTOS ====================
-    
+
     event TokenAdded(address indexed token);
     event OperationCreated(
         uint256 indexed operationId,
@@ -59,38 +64,50 @@ contract Escrow is Ownable, ReentrancyGuard {
         uint256 indexed operationId,
         address indexed initiator
     );
-    
+
     // ==================== FUNCIONES ADMIN ====================
-    
+
     /**
      * @dev Añadir token permitido para intercambios
      * @param _token Dirección del token ERC20
      */
     function addToken(address _token) external onlyOwner {
         require(_token != address(0), "Invalid token address");
-        require(!allowedTokens[_token], "Token already added");
-        
-        allowedTokens[_token] = true;
+        require(!isTokenAllowed[_token], "Token already added");
+
+        isTokenAllowed[_token] = true;
+        allowedTokensList.push(_token);
         emit TokenAdded(_token);
     }
-    
+
     /**
      * @dev Remover token permitido
      * @param _token Dirección del token ERC20
      */
     function removeToken(address _token) external onlyOwner {
-        require(allowedTokens[_token], "Token not allowed");
-        allowedTokens[_token] = false;
+        require(isTokenAllowed[_token], "Token not allowed");
+        isTokenAllowed[_token] = false;
+
+        // Remove from list (inefficient but works for small local testing)
+        for (uint i = 0; i < allowedTokensList.length; i++) {
+            if (allowedTokensList[i] == _token) {
+                allowedTokensList[i] = allowedTokensList[
+                    allowedTokensList.length - 1
+                ];
+                allowedTokensList.pop();
+                break;
+            }
+        }
     }
-    
+
     // ==================== FUNCIONES PRINCIPALES ====================
-    
+
     /**
      * @dev Crear operación de intercambio
-     * 
+     *
      * El iniciador debe haber aprobado previamente el contrato
      * para transferir los tokens.
-     * 
+     *
      * @param _amountA Cantidad de Token A a intercambiar
      * @param _recipient Dirección quien completa la operación
      * @param _amountB Cantidad de Token B solicitada
@@ -109,10 +126,10 @@ contract Escrow is Ownable, ReentrancyGuard {
         require(_amountB > 0, "Amount B must be greater than 0");
         require(_recipient != address(0), "Invalid recipient");
         require(_recipient != msg.sender, "Recipient cannot be initiator");
-        require(allowedTokens[_tokenA], "Token A not allowed");
-        require(allowedTokens[_tokenB], "Token B not allowed");
+        require(isTokenAllowed[_tokenA], "Token A not allowed");
+        require(isTokenAllowed[_tokenB], "Token B not allowed");
         require(_tokenA != _tokenB, "Tokens must be different");
-        
+
         // Transferir tokens del iniciador al contrato
         bool success = IERC20(_tokenA).transferFrom(
             msg.sender,
@@ -120,7 +137,7 @@ contract Escrow is Ownable, ReentrancyGuard {
             _amountA
         );
         require(success, "Token transfer failed");
-        
+
         // Crear operación
         uint256 operationId = operationCount;
         operations[operationId] = Operation({
@@ -131,11 +148,12 @@ contract Escrow is Ownable, ReentrancyGuard {
             tokenA: _tokenA,
             tokenB: _tokenB,
             status: OperationStatus.PENDING,
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            closedAt: 0
         });
-        
+
         operationCount++;
-        
+
         emit OperationCreated(
             operationId,
             msg.sender,
@@ -145,16 +163,16 @@ contract Escrow is Ownable, ReentrancyGuard {
             _amountB,
             _tokenB
         );
-        
+
         return operationId;
     }
-    
+
     /**
      * @dev Completar operación de intercambio
-     * 
+     *
      * Solo el destinatario puede completar la operación.
      * Debe haber aprobado previamente los tokens.
-     * 
+     *
      * @param _operationId ID de la operación
      * @param _amountB Cantidad de Token B a transferir
      */
@@ -163,14 +181,16 @@ contract Escrow is Ownable, ReentrancyGuard {
         uint256 _amountB
     ) external nonReentrant {
         Operation storage op = operations[_operationId];
-        
+
+        require(_operationId < operationCount, "Operation does not exist");
         require(op.status == OperationStatus.PENDING, "Operation not pending");
         require(msg.sender == op.recipient, "Only recipient can complete");
         require(_amountB == op.amountB, "Amount must match operation");
-        
+
         // Cambiar estado antes de transferencias (Checks-Effects-Interactions)
         op.status = OperationStatus.COMPLETED;
-        
+        op.closedAt = block.timestamp;
+
         // Transferir Token B del recipient al initiator
         bool successB = IERC20(op.tokenB).transferFrom(
             msg.sender,
@@ -178,58 +198,52 @@ contract Escrow is Ownable, ReentrancyGuard {
             op.amountB
         );
         require(successB, "Token B transfer failed");
-        
+
         // Transferir Token A del contrato al recipient
-        bool successA = IERC20(op.tokenA).transfer(
-            msg.sender,
-            op.amountA
-        );
+        bool successA = IERC20(op.tokenA).transfer(msg.sender, op.amountA);
         require(successA, "Token A transfer failed");
-        
+
         emit OperationCompleted(_operationId, op.initiator, msg.sender);
     }
-    
+
     /**
      * @dev Cancelar operación y recuperar tokens
-     * 
+     *
      * Solo el iniciador puede cancelar antes de que sea completada.
-     * 
+     *
      * @param _operationId ID de la operación
      */
     function cancelOperation(uint256 _operationId) external nonReentrant {
         Operation storage op = operations[_operationId];
-        
+
         require(op.status == OperationStatus.PENDING, "Operation not pending");
         require(msg.sender == op.initiator, "Only initiator can cancel");
-        
+
         // Cambiar estado
         op.status = OperationStatus.CANCELLED;
-        
+        op.closedAt = block.timestamp;
+
         // Retornar tokens al initiator
-        bool success = IERC20(op.tokenA).transfer(
-            msg.sender,
-            op.amountA
-        );
+        bool success = IERC20(op.tokenA).transfer(msg.sender, op.amountA);
         require(success, "Token transfer failed");
-        
+
         emit OperationCancelled(_operationId, msg.sender);
     }
-    
+
     // ==================== FUNCIONES LECTURA ====================
-    
+
     /**
      * @dev Obtener detalles de una operación
      * @param _operationId ID de la operación
      * @return operation Estructura con los detalles
      */
-    function getOperation(uint256 _operationId) 
-        external 
-        view 
-        returns (Operation memory) 
-    {
+    function getOperation(
+        uint256 _operationId
+    ) external view returns (Operation memory) {
+        require(_operationId < operationCount, "Operation does not exist");
         return operations[_operationId];
     }
-    
+
     /**
      * @dev Obtener número total de operaciones
      * @return count Total de operaciones creadas
@@ -237,37 +251,25 @@ contract Escrow is Ownable, ReentrancyGuard {
     function getOperationCount() external view returns (uint256) {
         return operationCount;
     }
-    
+
     /**
-     * @dev Verificar si un token es permitido
-     * @param _token Dirección del token
-     * @return isAllowed True si está permitido
+     * @dev Obtener lista de todos los tokens permitidos
      */
-    function isTokenAllowed(address _token) external view returns (bool) {
-        return allowedTokens[_token];
+    function getAllowedTokens() external view returns (address[] memory) {
+        return allowedTokensList;
     }
-    
+
     /**
-     * @dev Obtener lista de operaciones activas
-     * @return Array de IDs de operaciones activas
+     * @dev Obtener todas las operaciones registradas
+     * @return Array de todas las operaciones
      */
-    function getAllOperations() external view returns (uint256[] memory) {
-        uint256[] memory activeOps = new uint256[](operationCount);
-        uint256 count = 0;
-        
+    function getAllOperations() external view returns (Operation[] memory) {
+        Operation[] memory allOps = new Operation[](operationCount);
+
         for (uint256 i = 0; i < operationCount; i++) {
-            if (operations[i].status == OperationStatus.PENDING) {
-                activeOps[count] = i;
-                count++;
-            }
+            allOps[i] = operations[i];
         }
-        
-        // Crear array del tamaño correcto
-        uint256[] memory result = new uint256[](count);
-        for (uint256 i = 0; i < count; i++) {
-            result[i] = activeOps[i];
-        }
-        
-        return result;
+
+        return allOps;
     }
 }

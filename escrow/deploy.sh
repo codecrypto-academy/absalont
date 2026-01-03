@@ -65,7 +65,7 @@ fi
 print_success "Contratos compilados"
 
 print_step "Desplegando contrato Escrow..."
-DEPLOY_OUTPUT=$(forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast 2>&1)
+DEPLOY_OUTPUT=$(forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 2>&1)
 
 if echo "$DEPLOY_OUTPUT" | grep -q "error"; then
     print_error "Error en deployment"
@@ -76,10 +76,20 @@ fi
 print_success "Contrato Escrow desplegado"
 echo "$DEPLOY_OUTPUT"
 
-# Extraer direcciones del output
-ESCROW_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep -oP "Escrow: \K0x[a-fA-F0-9]{40}" | head -1)
-TOKEN_A_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep -oP "TokenA: \K0x[a-fA-F0-9]{40}" | head -1)
-TOKEN_B_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep -oP "TokenB: \K0x[a-fA-F0-9]{40}" | head -1)
+# Extraer direcciones del archivo de broadcast (más fiable que el output de consola)
+BROADCAST_FILE="sc/broadcast/Deploy.s.sol/31337/run-latest.json"
+
+if [ -f "$BROADCAST_FILE" ]; then
+    print_step "Extrayendo direcciones desde $BROADCAST_FILE..."
+    ESCROW_ADDRESS=$(grep -A 1 '"contractName": "Escrow"' "$BROADCAST_FILE" | grep "contractAddress" | head -1 | cut -d'"' -f4)
+    TOKEN_A_ADDRESS=$(grep -A 10 '"Token A"' "$BROADCAST_FILE" | grep "contractAddress" | head -1 | cut -d'"' -f4)
+    TOKEN_B_ADDRESS=$(grep -A 10 '"Token B"' "$BROADCAST_FILE" | grep "contractAddress" | head -1 | cut -d'"' -f4)
+else
+    print_warning "Archivo de broadcast no encontrado, intentando extraer del output..."
+    ESCROW_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep -oP "Escrow deployed at: \K0x[a-fA-F0-9]{40}" | head -1)
+    TOKEN_A_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep -oP "Token A deployed at: \K0x[a-fA-F0-9]{40}" | head -1)
+    TOKEN_B_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep -oP "Token B deployed at: \K0x[a-fA-F0-9]{40}" | head -1)
+fi
 
 if [ -z "$ESCROW_ADDRESS" ] || [ -z "$TOKEN_A_ADDRESS" ] || [ -z "$TOKEN_B_ADDRESS" ]; then
     print_error "No se pudieron extraer las direcciones del deployment"

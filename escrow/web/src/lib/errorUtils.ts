@@ -27,30 +27,37 @@ export function parseContractError(error: unknown): ParsedError {
   const errorStr = String(error);
   const errorLower = errorStr.toLowerCase();
 
+  // Extraer mensaje detallado si existe (Ethers V6 / Provider errors)
+  const detail = (error as any)?.reason ||
+    (error as any)?.info?.error?.message ||
+    (error as any)?.error?.message ||
+    (error as any)?.message ||
+    errorStr;
+  const detailLower = detail.toLowerCase();
+
   // Usuario rechazó la transacción
   if (
     errorLower.includes('user rejected') ||
-    errorLower.includes('user denied') ||
+    detailLower.includes('user rejected') ||
     errorLower.includes('rejected')
   ) {
     return {
       type: ErrorType.USER_REJECTED,
-      message: 'Rechazaste la transacción. Por favor, intenta de nuevo.',
+      message: 'Rechazaste la transacción en tu wallet.',
       originalError: error,
     };
   }
 
-  // Fondos insuficientes
+  // Fondos insuficientes (ETH o Tokens)
   if (
     errorLower.includes('insufficient') ||
-    errorLower.includes('insufficient balance') ||
-    errorLower.includes('insufficient funds') ||
-    errorLower.includes('insufficient allowance')
+    detailLower.includes('insufficient balance') ||
+    detailLower.includes('insufficient funds') ||
+    detailLower.includes('transfer amount exceeds balance')
   ) {
     return {
       type: ErrorType.INSUFFICIENT_FUNDS,
-      message:
-        'Saldo o allowance insuficiente. Asegúrate de tener suficientes tokens.',
+      message: 'Saldo insuficiente para completar la transacción.',
       originalError: error,
     };
   }
@@ -58,52 +65,35 @@ export function parseContractError(error: unknown): ParsedError {
   // Errores de red
   if (
     errorLower.includes('network') ||
-    errorLower.includes('timeout') ||
-    errorLower.includes('enotfound')
+    detailLower.includes('network') ||
+    errorLower.includes('timeout')
   ) {
     return {
       type: ErrorType.NETWORK_ERROR,
-      message:
-        'Error de conexión a la red. Verifica tu conexión a internet.',
+      message: 'Error de conexión. Verifica tu red.',
       originalError: error,
     };
   }
 
-  // Token no encontrado
-  if (errorLower.includes('token') && errorLower.includes('not found')) {
-    return {
-      type: ErrorType.TOKEN_NOT_FOUND,
-      message: 'Token no encontrado. Verifica la dirección del token.',
-      originalError: error,
-    };
-  }
+  // Error de contrato específico (revert con mensaje)
+  if (errorLower.includes('revert') || errorLower.includes('execution reverted')) {
+    // Intentar limpiar el mensaje de revert
+    let cleanMessage = detail;
+    if (detail.includes('reverted with reason string')) {
+      cleanMessage = detail.split("'")[1] || detail;
+    }
 
-  // Error de contrato (revert)
-  if (errorLower.includes('revert') || errorLower.includes('execution revert')) {
     return {
       type: ErrorType.CONTRACT_ERROR,
-      message:
-        'La transacción fue rechazada por el contrato. Verifica los datos.',
+      message: `Contrato: ${cleanMessage}`,
       originalError: error,
     };
   }
 
-  // Validación de entrada
-  if (
-    errorLower.includes('invalid') ||
-    errorLower.includes('invalid address')
-  ) {
-    return {
-      type: ErrorType.INVALID_INPUT,
-      message: 'Datos inválidos. Por favor, verifica tu entrada.',
-      originalError: error,
-    };
-  }
-
-  // Error desconocido
+  // Error desconocido pero con detalle
   return {
     type: ErrorType.UNKNOWN,
-    message: `Error: ${errorStr.substring(0, 100)}`,
+    message: detail.length < 100 ? detail : `Error: ${detail.substring(0, 100)}...`,
     originalError: error,
   };
 }
@@ -136,7 +126,7 @@ export function formatErrorDisplay(error: unknown): {
   };
 
   return {
-    title: titles[parsed.type],
+    title: titles[parsed.type] || '❌ Error',
     message: parsed.message,
   };
 }
@@ -176,12 +166,14 @@ export function logError(
   extra?: Record<string, unknown>
 ): void {
   const parsed = parseContractError(error);
-  console.error(`[${context}]`, {
-    type: parsed.type,
-    message: parsed.message,
-    originalError: parsed.originalError,
-    ...extra,
-  });
+
+  // Usamos warn para evitar disparar el overlay de Next.js en desarrollo
+  console.group(`[LOG: ${context}]`);
+  console.warn("Type:", parsed.type);
+  console.warn("Message:", parsed.message);
+  console.warn("Original error:", error);
+  if (extra) console.warn("Extra info:", extra);
+  console.groupEnd();
 }
 
 /**

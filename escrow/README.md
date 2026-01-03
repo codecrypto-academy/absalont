@@ -50,7 +50,6 @@ escrow/
 ├── dev-start.sh            # Script para iniciar dev local
 ├── START_HERE.md           # Instrucciones de inicio rápido
 ├── DEPLOYMENT.md           # Guía de deployment
-└── TESTING.md              # Guía de testing
 ```
 
 ## Requisitos Previos
@@ -84,7 +83,7 @@ En otra terminal:
 
 ```bash
 cd escrow/sc
-forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 ```
 
 Anota las direcciones desplegadas de `ESCROW_ADDRESS` y tokens.
@@ -112,7 +111,6 @@ Abre `http://localhost:3000` en tu navegador con MetaMask conectado.
 
 - [START_HERE.md](./START_HERE.md) - Guía paso a paso
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - Desplegar a redes públicas
-- [TESTING.md](./TESTING.md) - Ejecutar y escribir tests
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Arquitectura técnica
 
 ## Scripts Disponibles
@@ -131,7 +129,7 @@ forge test -v      # Verbose
 forge test --gas-report
 
 # Desplegar a local
-forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
 # Desplegar a Sepolia
 forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast

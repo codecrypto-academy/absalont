@@ -115,8 +115,9 @@ export function useEscrow() {
           amountB: op.amountB,
           tokenA: op.tokenA,
           tokenB: op.tokenB,
-          status: ['PENDING', 'COMPLETED', 'CANCELLED'][Number(op.status)],
+          status: ['PENDING', 'COMPLETED', 'CANCELLED'][Number(op.status)] as 'PENDING' | 'COMPLETED' | 'CANCELLED',
           createdAt: op.createdAt,
+          closedAt: op.closedAt,
         };
       } catch (err) {
         console.error('Error fetching operation:', err);
@@ -137,12 +138,23 @@ export function useEscrow() {
     }
   }, [getEscrowReader]);
 
+  const getAllowedTokens = useCallback(async (): Promise<string[]> => {
+    try {
+      const contract = await getEscrowReader();
+      return await contract.getAllowedTokens();
+    } catch (err) {
+      console.error('Error fetching allowed tokens:', err);
+      return [];
+    }
+  }, [getEscrowReader]);
+
   return {
     createOperation,
     completeOperation,
     cancelOperation,
     getOperation,
     getOperationCount,
+    getAllowedTokens,
     loading,
     error,
   };

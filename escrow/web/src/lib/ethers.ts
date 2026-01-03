@@ -14,11 +14,17 @@ export async function connectWallet(): Promise<string[]> {
 }
 
 export async function getConnectedAccount(): Promise<string | null> {
+  if (typeof window === 'undefined' || !window.ethereum) {
+    return null;
+  }
+
   try {
-    const provider = getProvider();
-    const signer = await getSigner();
-    return await signer.getAddress();
+    const accounts = await window.ethereum.request({
+      method: 'eth_accounts',
+    });
+    return accounts && accounts.length > 0 ? accounts[0] : null;
   } catch (error) {
+    console.error('Error getting connected account:', error);
     return null;
   }
 }

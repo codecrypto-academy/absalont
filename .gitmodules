@@ -22,3 +22,9 @@
 [submodule "e_commerce/sc-ecommerce/lib/forge-std"]
 	path = e_commerce/sc-ecommerce/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "escrow/sc/lib/openzeppelin-contracts"]
+	path = escrow/sc/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "escrow/sc/lib/forge-std"]
+	path = escrow/sc/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

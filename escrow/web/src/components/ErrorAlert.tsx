@@ -1,5 +1,7 @@
 'use client';
 
+import { X, AlertCircle, CheckCircle2, Info, AlertTriangle } from 'lucide-react';
+
 export interface ErrorAlertProps {
   title?: string;
   message: string;
@@ -8,17 +10,6 @@ export interface ErrorAlertProps {
   dismissible?: boolean;
 }
 
-/**
- * Componente reutilizable para mostrar alertas de error, advertencia, info o éxito
- * 
- * Ejemplo de uso:
- * <ErrorAlert 
- *   title="Error de conexión"
- *   message="No se pudo conectar al contrato inteligente"
- *   type="error"
- *   onClose={() => setError(null)}
- * />
- */
 export function ErrorAlert({
   title,
   message,
@@ -26,39 +17,34 @@ export function ErrorAlert({
   type = 'error',
   dismissible = true,
 }: ErrorAlertProps) {
-  // Mapeo de colores por tipo
   const typeStyles = {
     error: {
-      bg: 'bg-red-50',
-      border: 'border-red-200',
-      icon: '❌',
-      textTitle: 'text-red-900',
-      textMessage: 'text-red-700',
-      button: 'hover:bg-red-100',
+      bg: 'bg-rose-500/10',
+      border: 'border-rose-500/20',
+      icon: <AlertCircle className="w-5 h-5 text-rose-500" />,
+      textTitle: 'text-rose-200',
+      textMessage: 'text-rose-400/80',
     },
     warning: {
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-200',
-      icon: '⚠️',
-      textTitle: 'text-yellow-900',
-      textMessage: 'text-yellow-700',
-      button: 'hover:bg-yellow-100',
+      bg: 'bg-amber-500/10',
+      border: 'border-amber-500/20',
+      icon: <AlertTriangle className="w-5 h-5 text-amber-500" />,
+      textTitle: 'text-amber-200',
+      textMessage: 'text-amber-400/80',
     },
     info: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      icon: 'ℹ️',
-      textTitle: 'text-blue-900',
-      textMessage: 'text-blue-700',
-      button: 'hover:bg-blue-100',
+      bg: 'bg-indigo-500/10',
+      border: 'border-indigo-500/20',
+      icon: <Info className="w-5 h-5 text-indigo-500" />,
+      textTitle: 'text-indigo-200',
+      textMessage: 'text-indigo-400/80',
     },
     success: {
-      bg: 'bg-green-50',
-      border: 'border-green-200',
-      icon: '✅',
-      textTitle: 'text-green-900',
-      textMessage: 'text-green-700',
-      button: 'hover:bg-green-100',
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/20',
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />,
+      textTitle: 'text-emerald-200',
+      textMessage: 'text-emerald-400/80',
     },
   };
 
@@ -66,32 +52,29 @@ export function ErrorAlert({
 
   return (
     <div
-      className={`${style.bg} border ${style.border} rounded-lg p-4 mb-4 flex gap-3 items-start`}
+      className={`${style.bg} border ${style.border} rounded-2xl p-4 flex gap-4 items-start backdrop-blur-md`}
       role="alert"
     >
-      {/* Icon */}
-      <div className="text-lg flex-shrink-0">{style.icon}</div>
+      <div className="flex-shrink-0 mt-0.5">{style.icon}</div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         {title && (
-          <h3 className={`font-semibold ${style.textTitle} mb-1`}>
+          <h3 className={`font-bold text-sm tracking-tight ${style.textTitle} mb-1`}>
             {title}
           </h3>
         )}
-        <div className={`${style.textMessage} text-sm break-words`}>
+        <p className={`${style.textMessage} text-xs leading-relaxed font-medium`}>
           {message}
-        </div>
+        </p>
       </div>
 
-      {/* Close Button */}
       {dismissible && onClose && (
         <button
           onClick={onClose}
-          className={`flex-shrink-0 text-lg ${style.button} rounded p-1 transition-colors`}
+          className="flex-shrink-0 text-white/40 hover:text-white transition-colors p-1"
           aria-label="Cerrar alerta"
         >
-          ✕
+          <X className="w-4 h-4" />
         </button>
       )}
     </div>

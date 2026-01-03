@@ -7,6 +7,7 @@ export interface Operation {
   tokenB: string;
   status: 'PENDING' | 'COMPLETED' | 'CANCELLED';
   createdAt: bigint;
+  closedAt: bigint;
 }
 
 export interface TokenInfo {

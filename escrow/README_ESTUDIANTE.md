@@ -1,513 +1,364 @@
-# 📚 README ESTUDIANTE - Proyecto Escrow DApp
+# Proyecto Escrow DApp - Guía para Estudiantes
 
-> Guía completa para estudiantes - Fase 2: Smart Contract
+## Objetivo del Proyecto
 
-## 🎯 Objetivo del Proyecto
+Crear una aplicación descentralizada (DApp) completa para realizar intercambios seguros de tokens ERC20 utilizando un contrato inteligente de escrow. El proyecto incluye:
 
-Crear una **aplicación descentralizada (DApp)** completa para **intercambios seguros de tokens ERC20** usando un contrato inteligente Escrow.
+- **Smart Contract**: Contrato Escrow en Solidity que gestiona operaciones de intercambio de tokens
+- **Frontend Web**: Aplicación Next.js que permite interactuar con el contrato
+- **Integración Web3**: Conexión con MetaMask usando ethers.js
 
-### ¿Qué es un Escrow?
-Un Escrow es un intermediario que **mantiene fondos en custodia** hasta que ambas partes cumplan las condiciones del acuerdo. En este proyecto:
+## Funcionalidades Principales
 
-1. **Usuario A** deposita **Token A** en el contrato
-2. **Usuario B** acepta completar con **Token B**
-3. El contrato ejecuta la **transferencia atómica** de ambos tokens
+1. **Agregar Tokens**: El owner puede autorizar qué tokens ERC20 se pueden intercambiar
+2. **Crear Operación**: Usuario 1 deposita Token A y solicita Token B a cambio
+3. **Completar Operación**: Usuario 2 proporciona Token B y recibe Token A
+4. **Cancelar Operación**: Usuario 1 puede cancelar y recuperar sus tokens
+5. **Visualizar Estado**: Panel de debug para ver balances y operaciones activas
 
----
-
-## 📁 Estructura del Proyecto
+## Arquitectura del Proyecto
 
 ```
-escrow/
+90_escrow/
+├── sc/                          # Smart Contracts (Foundry)
+│   ├── src/
+│   │   └── Escrow.sol          # Contrato principal
+│   ├── script/
+│   │   └── Deploy.s.sol        # Script de deployment
+│   └── test/
+│       └── Escrow.t.sol        # Tests del contrato
 │
-├── 🔗 SMART CONTRACTS (Foundry - Solidity)
-│   └── sc/
-│       ├── src/
-│       │   ├── Escrow.sol              # Contrato principal
-│       │   ├── MockERC20.sol           # Token para testing
-│       │   └── interfaces/IEscrow.sol  # Interfaz
-│       ├── script/Deploy.s.sol         # Script deployment
-│       └── test/Escrow.t.sol           # 23 Tests
+├── web/                         # Frontend (Next.js 15)
+│   ├── app/
+│   │   └── page.tsx            # Página principal
+│   ├── components/
+│   │   ├── ConnectButton.tsx   # Conectar wallet
+│   │   ├── AddToken.tsx        # Agregar tokens permitidos
+│   │   ├── CreateOperation.tsx # Crear operación de swap
+│   │   ├── OperationsList.tsx  # Lista de operaciones
+│   │   └── BalanceDebug.tsx    # Debug de balances
+│   └── lib/
+│       ├── ethereum.tsx        # Context provider de Ethereum
+│       └── contracts.ts        # ABIs y direcciones
 │
-├── 🎨 FRONTEND (Next.js 14 + React)
-│   └── web/
-│       └── src/
-│           ├── app/                    # Páginas
-│           ├── components/             # 6 Componentes React
-│           ├── hooks/                  # 5 Hooks personalizados
-│           ├── context/                # WalletContext
-│           ├── lib/                    # Utilidades
-│           └── types/                  # TypeScript types
-│
-└── 📝 DOCUMENTACIÓN
-    ├── README_ESTUDIANTE.md            # ← Este archivo
-    ├── QUICK_START.md                  # Guía rápida (5 min)
-    ├── ARCHITECTURE.md                 # Arquitectura detallada
-    ├── TESTING.md                      # Guía de testing
-    ├── DEPLOYMENT.md                   # Deployment a testnet
-    ├── setup.sh                        # Script setup
-    └── deploy.sh                       # Script deployment automático
+├── deploy.sh                    # Script de deployment automático
+└── README_ESTUDIANTE.md        # Este archivo
 ```
 
----
+## Pasos para Realizar el Proyecto con IA
 
-## 🔗 SMART CONTRACT (Escrow.sol)
+### Fase 1: Setup Inicial
 
-### Funciones Principales
+**Prompt sugerido:**
+```
+Necesito crear un proyecto DApp de escrow para intercambio de tokens ERC20.
+Estructura:
+- Smart contracts con Foundry
+- Frontend con Next.js 15 y ethers.js
+- Debe permitir crear operaciones de swap, completarlas y cancelarlas
 
-#### ✅ Admin (Solo Owner)
-```solidity
-// Agregar token permitido para intercambios
-addToken(address _token)
-
-// Remover token permitido
-removeToken(address _token)
+Crea la estructura básica del proyecto con los directorios necesarios.
 ```
 
-#### ✅ Operaciones (Usuarios)
-```solidity
-// 1. Crear operación de intercambio
-//    - Deposita Token A del usuario al contrato
-//    - Requiere aprobación previa
-createOperation(
-    uint256 _amountA,
-    address _recipient,
-    uint256 _amountB,
-    address _tokenA,
-    address _tokenB
-) returns (uint256 operationId)
+### Fase 2: Smart Contract
 
-// 2. Completar operación
-//    - Solo el recipient puede hacerlo
-//    - Transfiere Token B a initiator
-//    - Transfiere Token A del contrato a recipient
-completeOperation(uint256 _operationId, uint256 _amountB)
+**Prompt sugerido:**
+```
+Crea el contrato Escrow.sol con estas funcionalidades:
+- Heredar de Ownable y ReentrancyGuard de OpenZeppelin
+- addToken(address): solo owner puede agregar tokens permitidos
+- createOperation(tokenA, tokenB, amountA, amountB): crear operación de swap
+  * Transferir tokenA del usuario al contrato
+  * Guardar la operación como activa
+- completeOperation(operationId): completar swap
+  * Transferir tokenB del usuario2 al usuario1
+  * Transferir tokenA del contrato al usuario2
+  * Solo puede completarla alguien diferente al creador
+- cancelOperation(operationId): cancelar operación
+  * Devolver tokenA al creador
+  * Solo el creador puede cancelar
+- getAllowedTokens(): retornar lista de tokens permitidos
+- getAllOperations(): retornar todas las operaciones
 
-// 3. Cancelar operación
-//    - Solo el initiator puede hacerlo
-//    - Devuelve Token A al initiator
-cancelOperation(uint256 _operationId)
+Incluye eventos para TokenAdded, OperationCreated, OperationCompleted, OperationCancelled
 ```
 
-#### ✅ Lectura
-```solidity
-// Obtener detalles de una operación
-getOperation(uint256 _operationId) returns (Operation memory)
-
-// Obtener total de operaciones
-getOperationCount() returns (uint256)
-
-// Obtener lista de operaciones activas
-getAllOperations() returns (uint256[] memory)
-
-// Verificar si un token es permitido
-isTokenAllowed(address _token) returns (bool)
+**Prompt de pruebas:**
+```
+Crea tests completos para el contrato Escrow.sol usando Foundry.
+Prueba todos los casos: happy path, reverts, edge cases.
 ```
 
-### Estados de Operación
-```
-PENDING    → Esperando que recipient complete
-COMPLETED → Operación completada exitosamente
-CANCELLED → Operación cancelada, fondos devueltos
-```
+### Fase 3: Scripts de Deployment
 
-### Protecciones de Seguridad
-- ✅ **ReentrancyGuard** - Previene ataques reentrancia
-- ✅ **Validaciones exhaustivas** - Amounts > 0, addresses válidas, tokens distintos
-- ✅ **Checks-Effects-Interactions** - Patrón seguro (cambio estado → transferencias)
-- ✅ **Eventos** - Auditoría y tracking de operaciones
+**Prompt sugerido:**
+```
+Crea un script deploy.sh que:
+1. Despliegue el contrato Escrow
+2. Despliegue dos tokens ERC20 de prueba (TokenA y TokenB)
+3. Agregue ambos tokens al contrato Escrow
+4. Mint 1000 tokens de cada tipo a las cuentas de test de Anvil:
+   - 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+   - 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+   - 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+5. Actualice automáticamente la dirección del contrato en web/lib/contracts.ts
+6. Genere un archivo deployment-info.txt con las direcciones
 
-### Eventos Emitidos
-```solidity
-TokenAdded(address indexed token)
-OperationCreated(uint256 indexed operationId, ...)
-OperationCompleted(uint256 indexed operationId, ...)
-OperationCancelled(uint256 indexed operationId, ...)
+El script debe asumir que Anvil ya está corriendo en http://localhost:8545
 ```
 
----
+### Fase 4: Frontend - Setup Base
 
-## 🎨 FRONTEND (React + TypeScript)
-
-### 6 Componentes Principales
-
-#### 1. **ConnectionButton.tsx**
-```typescript
-// Botón para conectar/desconectar MetaMask
-// Muestra dirección acortada: 0x1234...5678
-// Estados: Conectando | Conectado | Desconectado
+**Prompt sugerido:**
+```
+Crea el setup base del frontend:
+1. Configurar Next.js 15 con TypeScript
+2. Instalar ethers.js v6
+3. Configurar Tailwind CSS v4
+4. Crear el context provider de Ethereum en lib/ethereum.tsx que:
+   - Gestione la conexión con MetaMask
+   - Provea provider, signer, account
+   - Auto-reconecte al refrescar la página
+5. Crear lib/contracts.ts con los ABIs del contrato Escrow y ERC20
 ```
 
-#### 2. **AddToken.tsx** (Admin)
-```typescript
-// Formulario para agregar tokens permitidos
-// Solo el owner (admin) puede usarlo
-// Input: Dirección del contrato token (0x...)
+### Fase 5: Componente de Conexión
+
+**Prompt sugerido:**
+```
+Crea el componente ConnectButton.tsx que:
+- Muestre "Connect Wallet" si no está conectado
+- Al hacer clic, conecte con MetaMask
+- Si está conectado, muestre la dirección abreviada (0x1234...5678)
+- Incluya un botón de disconnect
+- Evite errores de hidratación con el hook de mounted
 ```
 
-#### 3. **CreateOperation.tsx**
-```typescript
-// Formulario para crear operación de swap
-// Inputs:
-//   - Token A (dirección)
-//   - Cantidad A (número)
-//   - Token B (dirección)
-//   - Cantidad B (número)
-//   - Recipient (dirección de usuario B)
-// Requiere aprobación de Token A
+### Fase 6: Componente AddToken
+
+**Prompt sugerido:**
+```
+Crea el componente AddToken.tsx que:
+- Muestre un formulario para agregar la dirección de un token
+- Al enviar, llame a addToken() del contrato
+- Muestre la dirección del contrato Escrow
+- Liste todos los tokens ya agregados con su símbolo y dirección
+- Solo el owner puede usar esta función
 ```
 
-#### 4. **OperationsList.tsx**
-```typescript
-// Muestra operaciones activas (PENDING)
-// Para cada operación:
-//   - Si eres recipient: Botón "Completar"
-//   - Si eres initiator: Botón "Cancelar"
-// Auto-refresh cada 5 segundos
-// Muestra estados: PENDING, COMPLETED, CANCELLED
+### Fase 7: Componente CreateOperation
+
+**Prompt sugerido:**
+```
+Crea el componente CreateOperation.tsx que:
+- Tenga dropdowns para seleccionar Token A y Token B desde los tokens permitidos
+- Campos numéricos para Amount A y Amount B
+- Al enviar, ejecute en un solo paso:
+  1. approve() de Token A al contrato Escrow
+  2. createOperation() con los parámetros ingresados
+- Muestre mensajes de éxito/error
+- Refresque la página después de crear exitosamente
 ```
 
-#### 5. **BalanceDebug.tsx**
-```typescript
-// Panel debug para verificar balances
-// Funcionalidades:
-//   - Tu dirección wallet
-//   - Verificar balance de cualquier token
-//   - Balance en el contrato escrow
-//   - Botón para actualizar
+### Fase 8: Componente OperationsList
+
+**Prompt sugerido:**
+```
+Crea el componente OperationsList.tsx que:
+- Liste todas las operaciones usando getAllOperations()
+- Para cada operación muestre:
+  * ID, creador, tokens involucrados, cantidades
+  * Estado: Active o Closed
+- Si el usuario conectado es el creador y está activa:
+  * Botón "Cancel Operation"
+- Si el usuario conectado NO es el creador y está activa:
+  * Botón "Complete Operation" que ejecute approve + completeOperation en un paso
+- Auto-refresque cada 5 segundos
+- Maneje el caso cuando no hay operaciones (array vacío)
 ```
 
-#### 6. **WalletSelector.tsx**
-```typescript
-// Selector de wallet (MetaMask)
-// Cambiar cuenta
-// Ver balance de la red
+### Fase 9: Componente BalanceDebug
+
+**Prompt sugerido:**
+```
+Crea el componente BalanceDebug.tsx que:
+- Muestre los balances de ETH y tokens para:
+  1. El contrato Escrow (destacado en azul)
+  2. Account #0: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+  3. Account #1: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+  4. Account #2: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+- Incluya un botón "Refresh" para actualizar manualmente
+- Maneje el caso cuando no hay tokens aún (array vacío)
 ```
 
-### 5 Hooks Personalizados
+### Fase 10: Página Principal
 
-#### 1. **useWallet()**
-```typescript
-const { account, isConnected, connect, disconnect } = useWallet()
-// Acceso al contexto global de wallet
-// Conectar/desconectar MetaMask
-// Obtener cuenta actual
+**Prompt sugerido:**
+```
+Crea la página principal app/page.tsx que:
+- Muestre el header con título "Escrow DApp" y el ConnectButton
+- Si no está conectado: mensaje de bienvenida
+- Si está conectado: grid con 3 columnas:
+  * Columna 1: AddToken y CreateOperation
+  * Columna 2: OperationsList
+  * Columna 3: BalanceDebug
+- Footer con información del proyecto
 ```
 
-#### 2. **useContract()**
-```typescript
-const { 
-  createOperation, completeOperation, cancelOperation,
-  getOperation, getOperations,
-  getBalance, addToken,
-  loading, error, account
-} = useContract()
-// Hook unificado para todas las operaciones del smart contract
+### Fase 11: Manejo de Errores
+
+**Prompt sugerido:**
+```
+Agrega manejo de errores robusto en todos los componentes:
+- Si getAllowedTokens() falla (0 tokens), usar array vacío
+- Si getAllOperations() falla (0 operaciones), usar array vacío
+- Mostrar mensajes de error claros al usuario
+- Manejar errores de MetaMask (usuario rechaza transacción, etc)
 ```
 
-#### 3. **useEscrow()**
-```typescript
-const { 
-  createOperation, completeOperation, cancelOperation,
-  getOperation, getOperationCount,
-  loading, error
-} = useEscrow()
-// Métodos específicos del contrato Escrow
+### Fase 12: Testing End-to-End
+
+**Prompt sugerido:**
+```
+Documenta el flujo de prueba completo:
+1. Iniciar Anvil
+2. Ejecutar deploy.sh
+3. Importar cuentas de test en MetaMask
+4. Agregar tokens permitidos
+5. Crear operación con cuenta 1
+6. Cambiar a cuenta 2 en MetaMask
+7. Completar operación con cuenta 2
+8. Verificar balances actualizados
+9. Probar cancelación de operación
 ```
 
-#### 4. **useBalance(tokenAddress)**
-```typescript
-const { balance, loading, refetch } = useBalance(tokenAddress)
-// Obtener y actualizar balance de un token
-```
+## Flujo de Uso Típico
 
-#### 5. **useToken(tokenAddress)**
-```typescript
-const { approve, allowance, balanceOf, decimals, symbol } = useToken(tokenAddress)
-// Operaciones de token: approve, balance, allowance
-```
-
-### Global State Management
-
-#### **WalletContext.tsx**
-```typescript
-<WalletProvider>
-  {/* Toda la app tiene acceso a */}
-  account, signer, provider, connected, connect, disconnect
-</WalletProvider>
-```
-
----
-
-## 🚀 Cómo Ejecutar
-
-### Opción 1: Setup Automático (Recomendado)
+### 1. Setup del Entorno
 
 ```bash
-# Ir a carpeta escrow
-cd escrow
-
-# Ejecutar setup (verifica herramientas, compila, instala)
-bash setup.sh
-```
-
-**¿Qué hace setup.sh?**
-- ✅ Verifica Foundry instalado
-- ✅ Verifica Node.js instalado
-- ✅ Instala librerías Foundry
-- ✅ Compila smart contracts
-- ✅ Ejecuta 23 tests
-- ✅ Instala npm packages
-- ✅ Crea .env.local
-
-### Opción 2: Manual
-
-**Terminal 1 - Blockchain Local:**
-```bash
+# Terminal 1: Iniciar Anvil (blockchain local)
 anvil
-# Escucha en 127.0.0.1:8545
-# Proporciona 10 cuentas precargadas con ETH
-```
 
-**Terminal 2 - Deploy Contratos:**
-```bash
-cd escrow/sc
-forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
-# Output: Direcciones de Escrow, TokenA, TokenB
-```
+# Terminal 2: Desplegar contratos
+cd /path/to/90_escrow
+./deploy.sh
 
-**Terminal 3 - Frontend:**
-```bash
-cd escrow/web
-
-# Actualizar .env.local con direcciones del deploy
-# NEXT_PUBLIC_ESCROW_ADDRESS=0x...
-# NEXT_PUBLIC_TOKEN_A_ADDRESS=0x...
-# NEXT_PUBLIC_TOKEN_B_ADDRESS=0x...
-
+# Terminal 3: Iniciar frontend
+cd web
+npm install
 npm run dev
-# Abre http://localhost:3000
 ```
 
----
+### 2. Configurar MetaMask
 
-## 📝 Flujo Típico de Usuario
+- Agregar red local: http://localhost:8545, Chain ID: 31337
+- Importar las 3 cuentas de test usando sus private keys (mostradas por Anvil)
 
-### Escenario: User1 intercambia 100 TokenA por 50 TokenB de User2
+### 3. Usar la DApp
 
-#### PASO 1: Admin agrega tokens permitidos
-```
-1. Connect Wallet (User = Owner/Admin)
-2. Click "Agregar Token"
-3. Ingresa: 0x... (TokenA contract address)
-4. Confirma en MetaMask
-5. Token A ahora está permitido
-6. Repite para Token B
-```
+**Como Owner (Cuenta 0):**
+1. Conectar wallet
+2. Agregar tokens permitidos (TokenA y TokenB ya están desplegados)
+3. Ver que aparecen en la lista
 
-#### PASO 2: User1 crea operación
-```
-1. Connect Wallet (User = User1)
-2. Click "Crear Operación"
-3. Ingresa:
-   - Token A: 0x...
-   - Cantidad A: 100
-   - Token B: 0x...
-   - Cantidad B: 50
-   - Recipient: 0x... (Dirección de User2)
-4. Click "Crear Operación"
-5. MetaMask pide APPROVE de 100 TokenA
-6. Confirma approve
-7. MetaMask pide SIGNATURE para crear operación
-8. Confirma → Operación creada ✅
-   - 100 TokenA transferido del contrato al escrow
-```
+**Como Usuario 1 (Cuenta 0):**
+1. Crear operación: Ofrecer 100 TKA por 50 TKB
+2. Aprobar y confirmar en MetaMask (2 transacciones)
+3. Ver la operación en la lista como "Active"
 
-#### PASO 3: User2 completa operación
-```
-1. Cambiar cuenta en MetaMask (User = User2)
-2. Refrescar página
-3. Ver "Operaciones Activas"
-4. Click "Completar" en la operación de User1
-5. MetaMask pide APPROVE de 50 TokenB
-6. Confirma approve
-7. MetaMask pide SIGNATURE para completar
-8. Confirma → Operación completada ✅
-   - 50 TokenB → User1
-   - 100 TokenA (del escrow) → User2
-```
+**Como Usuario 2 (Cuenta 1 o 2):**
+1. Cambiar de cuenta en MetaMask
+2. Ver la operación creada por Usuario 1
+3. Click en "Complete Operation"
+4. Aprobar y confirmar en MetaMask (2 transacciones)
+5. Ver que la operación cambia a "Closed"
+6. Verificar en BalanceDebug que los tokens se intercambiaron
 
----
+**Cancelación (Usuario 1):**
+1. Si no se completó, Usuario 1 puede cancelar
+2. Click en "Cancel Operation"
+3. Los tokens regresan al creador
 
-## 🧪 Testing
+## Tecnologías Utilizadas
 
-```bash
-cd escrow/sc
-forge test
-# Ejecuta 23 tests
-# Coverage:
-# - addToken: 4 tests
-# - createOperation: 8 tests
-# - completeOperation: 5 tests
-# - cancelOperation: 4 tests
-# - Complex flows: 2 tests
-```
+- **Solidity 0.8.13**: Lenguaje de smart contracts
+- **Foundry**: Framework para desarrollo y testing de contratos
+- **OpenZeppelin**: Librerías estándar (Ownable, ReentrancyGuard, IERC20)
+- **Next.js 15**: Framework de React con App Router
+- **TypeScript**: Tipado estático
+- **Ethers.js v6**: Librería para interactuar con Ethereum
+- **Tailwind CSS v4**: Estilos
+- **MetaMask**: Wallet de navegador
 
-**Prueba individual:**
-```bash
-forge test --match-test testCreateOperation -v
-```
+## Conceptos Clave Aprendidos
 
----
+### Smart Contracts
+- Patrón Escrow para intercambios seguros
+- Control de acceso con Ownable
+- Protección contra reentrancy
+- Gestión de tokens ERC20
+- Eventos para tracking
+- Modifiers personalizados
 
-## 📚 Archivos de Documentación
+### Frontend Web3
+- Conexión con wallet (MetaMask)
+- Firma de transacciones
+- Lectura de estado del contrato (view functions)
+- Escritura en blockchain (transacciones)
+- Manejo de aprobaciones ERC20
+- Auto-refresh de datos
 
-1. **README_ESTUDIANTE.md** ← Estás aquí
-2. **QUICK_START.md** - Guía rápida (5 minutos)
-3. **PROJECT_STATUS.md** - Estado completo del proyecto
-4. **ARCHITECTURE.md** - Arquitectura detallada
-5. **TESTING.md** - Guía completa de testing
-6. **DEPLOYMENT.md** - Deployment a Sepolia testnet
-7. **START_HERE.md** - Introducción general
+### Flujo de Trabajo
+- Deployment automatizado
+- Testing de contratos
+- Gestión de direcciones de contratos
+- Debugging con balance tracking
+- Manejo de múltiples cuentas
 
----
+## Troubleshooting Común
 
-## 💡 Conceptos Clave a Entender
+### Error: "could not decode result data"
+**Causa**: Intentar llamar `getAllowedTokens()` o `getAllOperations()` cuando el array está vacío.
+**Solución**: Agregar try-catch y usar array vacío como fallback.
 
-### ERC20
-Token estándar de Ethereum. Permite transferencias, aprobaciones, balances.
+### Error: "Cannot complete your own operation"
+**Causa**: Intentar completar una operación que tu mismo creaste.
+**Solución**: Cambiar de cuenta en MetaMask antes de completar.
 
-### Escrow
-Sistema de custodia donde un tercero (el contrato) mantiene fondos hasta que ambas partes cumplan las condiciones.
+### Error: "Insufficient allowance"
+**Causa**: No se aprobó el token antes de crear/completar la operación.
+**Solución**: Los componentes ya manejan approve automáticamente.
 
-### Atomic Swap
-Intercambio donde o sucede todo o nada. Imposible que una parte quede con ambos tokens.
+### Error: "Operation is not active"
+**Causa**: Intentar completar/cancelar una operación ya cerrada.
+**Solución**: Refrescar la lista de operaciones.
 
-### ReentrancyGuard
-Previene que un atacante llame a la función nuevamente antes de que termine.
+### MetaMask no se conecta
+**Causa**: Red incorrecta o cuentas no importadas.
+**Solución**: Verificar que MetaMask está en localhost:8545 con Chain ID 31337.
 
-### Checks-Effects-Interactions
-Patrón seguro:
-1. Checks: Validar condiciones
-2. Effects: Cambiar estado interno
-3. Interactions: Llamadas externas
+## Siguientes Pasos / Mejoras Posibles
 
----
+1. **Agregar fees**: Cobrar una comisión por cada swap
+2. **Expiración temporal**: Operaciones que expiren después de X tiempo
+3. **Ofertas parciales**: Permitir completar solo parte de una operación
+4. **Sistema de reputación**: Rating de usuarios
+5. **Notificaciones**: Alertas cuando se completa una operación
+6. **Filtros y búsqueda**: Buscar operaciones por token
+7. **Historial**: Ver operaciones completadas/canceladas
+8. **Multi-chain**: Desplegar en múltiples redes
+9. **Tests E2E**: Usar Playwright o Cypress
+10. **Subgraph**: Indexar eventos con The Graph
 
-## 🔒 Seguridad
+## Recursos Adicionales
 
-El contrato implementa varias protecciones:
+- **Foundry Book**: https://book.getfoundry.sh/
+- **Ethers.js Docs**: https://docs.ethers.org/v6/
+- **OpenZeppelin**: https://docs.openzeppelin.com/
+- **Next.js**: https://nextjs.org/docs
+- **Solidity by Example**: https://solidity-by-example.org/
 
-| Protección | Descripción |
-|-----------|------------|
-| ReentrancyGuard | Previene ataques reentrancia |
-| Validaciones | Verifica amounts > 0, addresses válidas |
-| Checks-Effects-Interactions | Estado cambia antes de transferencias |
-| Ownable | Solo owner puede agregar tokens |
-| Eventos | Auditoría y tracking |
-| SafeERC20 (implícito) | Maneja retornos de ERC20 correctamente |
+## Licencia
 
----
-
-## ❓ Preguntas Frecuentes
-
-### ¿Qué es anvil?
-Blockchain local en Ethereum. Proporciona 10 cuentas precargadas con ETH para testing.
-
-### ¿Por qué debo "aprobar" antes?
-ERC20 requiere aprobación para que un contrato pueda transferir tus tokens.
-
-### ¿Qué pasa si cancelo una operación?
-Tu Token A es devuelto. La operación pasa a estado CANCELLED.
-
-### ¿Puedo cambiar de red?
-Sí, pero debes agregar Anvil Local (Chain ID: 31337) a MetaMask.
-
-### ¿Cómo sé si funcionó?
-Verifica los balances en el panel "Debug de Balances" o en MetaMask.
-
----
-
-## 🚨 Troubleshooting
-
-| Problema | Solución |
-|---------|----------|
-| "Provider not available" | MetaMask no está conectada |
-| "Wallet not connected" | Click en "Conectar Wallet" |
-| "Token not allowed" | Admin debe agregar el token primero |
-| "Insufficient allowance" | Approve el token en el componente |
-| "Transaction failed" | Verifica gas, balance, y que la operación esté PENDING |
-
----
-
-## ✅ Checklist para Estudiantes
-
-- [ ] Entendí qué es un Escrow
-- [ ] Revisé el código de Escrow.sol
-- [ ] Ejecuté los 23 tests exitosamente
-- [ ] Configuré MetaMask con red Anvil
-- [ ] Ejecuté setup.sh sin errores
-- [ ] Inicié anvil en Terminal 1
-- [ ] Desplegué contratos en Terminal 2
-- [ ] Inicié frontend en Terminal 3
-- [ ] Conecté wallet
-- [ ] Agregué tokens (como admin)
-- [ ] Creé una operación
-- [ ] Completé una operación
-- [ ] Probé cancelar una operación
-- [ ] Revisé el código del frontend
-- [ ] Entendí cómo funcionan los hooks
-
----
-
-## 📞 Soporte
-
-Para dudas:
-1. Revisa los archivos de documentación
-2. Consulta el código comentado
-3. Prueba los tests como referencia
-
----
-
-## 🎓 Lo Que Aprendiste
-
-En este proyecto practicaste:
-
-✅ **Smart Contracts**
-- Solidity avanzado
-- Patrones de seguridad
-- Testing con Foundry
-- Deployment scripts
-
-✅ **Frontend**
-- React + TypeScript
-- Web3 integration (ethers.js)
-- Context API para state management
-- Hooks personalizados
-- Tailwind CSS
-
-✅ **Web3**
-- Conectar wallets
-- Interactuar con contratos
-- Manejar tokens ERC20
-- Firmar transacciones
-
-✅ **DevOps**
-- Blockchain local (anvil)
-- Deployment scripts
-- Testing automatizado
-
----
-
-## 🎉 ¡Felicitaciones!
-
-Has completado el proyecto Escrow DApp. Ahora entiendes cómo crear aplicaciones descentralizadas completas.
-
-**Próximos pasos:** 
-- Despliega a Sepolia testnet
-- Agrega más funcionalidades
-- Crea tu propia DApp
-
----
-
-**Hecho con ❤️ para CodeCrypto Academy**
+MIT

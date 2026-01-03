@@ -6,6 +6,16 @@ import { useWallet } from '@/context/WalletContext';
 import { ESCROW_ADDRESS, TOKEN_A_ADDRESS, TOKEN_B_ADDRESS, ERC20_ABI } from '@/lib/constants';
 import { ErrorAlert } from '@/components/ErrorAlert';
 import { formatErrorDisplay, logError, isValidAddress } from '@/lib/errorUtils';
+import {
+  BarChart3,
+  Wallet,
+  Database,
+  ChevronRight,
+  ExternalLink,
+  RefreshCcw,
+  Zap
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AccountBalance {
   address: string;
@@ -25,320 +35,227 @@ interface EscrowBalance {
   };
 }
 
-// Cuentas de Anvil precargadas
 const ANVIL_ACCOUNTS = [
-  {
-    address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-    label: 'Account #0 (Admin)',
-  },
-  {
-    address: '0x70997970C51812e339d9B73b0245Ad39965e02F7',
-    label: 'Account #1',
-  },
-  {
-    address: '0x3C44CdDdB6a900c6B318C5d4Eb0Efc0b4e6B41',
-    label: 'Account #2',
-  },
+  { address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', label: 'Account #0' },
+  { address: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8', label: 'Account #1' },
+  { address: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', label: 'Account #2' },
 ];
 
 export function BalanceDebug() {
   const { provider, account } = useWallet();
   const [escrowBalance, setEscrowBalance] = useState<EscrowBalance | null>(null);
   const [accountBalances, setAccountBalances] = useState<AccountBalance[]>([]);
+  const [currentAccountBalance, setCurrentAccountBalance] = useState<AccountBalance | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<{ title: string; message: string } | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMinting, setIsMinting] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  // Obtener balance de un token ERC20 con fallback a '0'
-  const getTokenBalance = async (
-    tokenAddress: string,
-    accountAddress: string
-  ): Promise<string> => {
+  const getTokenBalance = async (tokenAddress: string, accountAddress: string): Promise<string> => {
     try {
-      if (!provider || !isValidAddress(tokenAddress) || !isValidAddress(accountAddress)) {
-        return '0';
-      }
-
+      if (!provider || !isValidAddress(tokenAddress) || !isValidAddress(accountAddress)) return '0';
       const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
       const balance = await tokenContract.balanceOf(accountAddress).catch(() => BigInt(0));
       return ethers.formatEther(balance);
-    } catch (err) {
-      logError(`BalanceDebug: getTokenBalance for ${tokenAddress}`, err);
-      return '0'; // Fallback a 0 si falla
-    }
+    } catch { return '0'; }
   };
 
-  // Cargar balances
   const loadBalances = async () => {
     if (!provider) return;
-
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
+      const escrowEth = ethers.formatEther(await provider.getBalance(ESCROW_ADDRESS).catch(() => BigInt(0)));
+      const escrowTokenA = await getTokenBalance(TOKEN_A_ADDRESS, ESCROW_ADDRESS);
+      const escrowTokenB = await getTokenBalance(TOKEN_B_ADDRESS, ESCROW_ADDRESS);
 
-      // Escrow balances
-      let escrowEth = '0';
-      let escrowTokenA = '0';
-      let escrowTokenB = '0';
+      setEscrowBalance({ ethBalance: escrowEth, tokenBalances: { tokenA: escrowTokenA, tokenB: escrowTokenB } });
 
-      try {
-        escrowEth = ethers.formatEther(await provider.getBalance(ESCROW_ADDRESS));
-        escrowTokenA = await getTokenBalance(TOKEN_A_ADDRESS, ESCROW_ADDRESS);
-        escrowTokenB = await getTokenBalance(TOKEN_B_ADDRESS, ESCROW_ADDRESS);
-      } catch (err) {
-        logError('BalanceDebug: escrow balances', err);
-        // Continuar con ceros
-      }
-
-      setEscrowBalance({
-        ethBalance: escrowEth,
-        tokenBalances: {
-          tokenA: escrowTokenA,
-          tokenB: escrowTokenB,
-        },
-      });
-
-      // Account balances (con manejo de errores por cuenta)
-      const balances = await Promise.all(
-        ANVIL_ACCOUNTS.map(async (acc) => {
-          try {
-            const ethBalance = ethers.formatEther(await provider.getBalance(acc.address));
-            const tokenA = await getTokenBalance(TOKEN_A_ADDRESS, acc.address);
-            const tokenB = await getTokenBalance(TOKEN_B_ADDRESS, acc.address);
-
-            return {
-              address: acc.address,
-              label: acc.label,
-              ethBalance,
-              tokenBalances: {
-                tokenA,
-                tokenB,
-              },
-            };
-          } catch (err) {
-            logError(`BalanceDebug: account balance for ${acc.address}`, err);
-            // Retornar account con balances en 0
-            return {
-              address: acc.address,
-              label: acc.label,
-              ethBalance: '0',
-              tokenBalances: {
-                tokenA: '0',
-                tokenB: '0',
-              },
-            };
-          }
-        })
-      );
-
+      const balances = await Promise.all(ANVIL_ACCOUNTS.map(async (acc) => {
+        const eth = ethers.formatEther(await provider.getBalance(acc.address).catch(() => BigInt(0)));
+        const tA = await getTokenBalance(TOKEN_A_ADDRESS, acc.address);
+        const tB = await getTokenBalance(TOKEN_B_ADDRESS, acc.address);
+        return { address: acc.address, label: acc.label, ethBalance: eth, tokenBalances: { tokenA: tA, tokenB: tB } };
+      }));
       setAccountBalances(balances);
-      setLoading(false);
-    } catch (err) {
-      logError('BalanceDebug: loadBalances general', err);
-      const { title, message } = formatErrorDisplay(err);
-      setError({ title, message });
-      setLoading(false);
-    }
+
+      if (account) {
+        const eth = ethers.formatEther(await provider.getBalance(account).catch(() => BigInt(0)));
+        const tA = await getTokenBalance(TOKEN_A_ADDRESS, account);
+        const tB = await getTokenBalance(TOKEN_B_ADDRESS, account);
+        setCurrentAccountBalance({ address: account, label: 'Tu Billetera', ethBalance: eth, tokenBalances: { tokenA: tA, tokenB: tB } });
+      }
+    } finally { setLoading(false); }
   };
 
-  // Cargar balances al montar
-  useEffect(() => {
-    loadBalances();
-  }, [provider]);
+  useEffect(() => { loadBalances(); }, [provider]);
+
+  const mintTokens = async (tokenAddress: string, accountAddress: string) => {
+    if (!provider) return;
+    try {
+      setIsMinting(`${tokenAddress}-${accountAddress}`);
+      const signer = await provider.getSigner();
+      const normalizedToken = ethers.getAddress(tokenAddress);
+      const normalizedAccount = ethers.getAddress(accountAddress);
+
+      const tokenContract = new ethers.Contract(normalizedToken, ERC20_ABI, signer);
+      const amount = ethers.parseEther('50');
+      const tx = await tokenContract.mint(normalizedAccount, amount);
+      await tx.wait();
+      await loadBalances();
+    } catch (err) {
+      logError('BalanceDebug: mintTokens', err);
+    } finally {
+      setIsMinting(null);
+    }
+  };
 
   const truncateAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
-  const formatNumber = (num: string): string => {
-    try {
-      const parsed = parseFloat(num);
-      return parsed.toFixed(2);
-    } catch {
-      return '0.00';
-    }
-  };
-
   return (
-    <div className="bg-white rounded-lg shadow-md">
-      {/* Header - Expandible */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 rounded-lg transition-colors"
-      >
-        <div className="flex items-center gap-3 text-left">
-          <span className="text-xl">🔍</span>
-          <div>
-            <h2 className="text-xl font-bold text-white">Debug Panel - Ver Balances</h2>
-            <p className="text-xs text-gray-400 mt-1">
-              Monitorea los balances de ETH y tokens del Escrow y cuentas de Anvil
-            </p>
+    <div className="flex flex-col h-full bg-[#0d1117]/50 backdrop-blur-sm">
+      <div className="p-6 border-b border-white/5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+            <BarChart3 className="w-5 h-5" />
           </div>
+          <h2 className="font-bold text-lg">Balance Explorer</h2>
         </div>
-        <div className="flex items-center gap-2">
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              loading
-                ? 'bg-yellow-200 text-yellow-800'
-                : 'bg-green-200 text-green-800'
-            }`}
-          >
-            {loading ? 'Cargando...' : 'Listo'}
-          </span>
-          <span className="text-2xl text-white transform transition-transform">
-            {isExpanded ? '▼' : '▶'}
-          </span>
-        </div>
-      </button>
+        <button onClick={loadBalances} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-500 hover:text-white">
+          <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
 
-      {/* Contenido Expandido */}
-      {isExpanded && (
-        <div className="px-6 py-4 border-t border-gray-200 space-y-6">
-          {/* Error Alert */}
-          {error && (
-            <ErrorAlert
-              title={error.title}
-              message={error.message}
-              type="error"
-              onClose={() => setError(null)}
-            />
-          )}
-
-          {/* Refresh Button */}
-          <button
-            onClick={loadBalances}
-            disabled={loading}
-            className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-colors ${
-              loading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
-            }`}
-          >
-            {loading ? '⏳ Actualizando...' : '🔄 Refresh - Actualizar Balances'}
-          </button>
-
-          {/* Escrow Balance - Destacado en Azul */}
-          {escrowBalance && (
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-6">
+      <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
+        {/* Escrow Contract Highlights */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Contrato Principal</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+              <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Active</span>
+            </div>
+          </div>
+          <div className="bg-indigo-600/5 border border-indigo-500/20 rounded-2xl p-5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-10 bg-indigo-500/5 blur-[40px] pointer-events-none" />
+            <div className="relative">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-blue-900">💼 Contrato Escrow</h3>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-200 text-blue-900">
-                  DESTACADO
-                </span>
+                <span className="text-xs text-gray-400 font-medium">Fondo de Garantía</span>
+                <span className="text-[10px] font-mono text-indigo-400 font-bold tracking-tighter">{truncateAddress(ESCROW_ADDRESS)}</span>
               </div>
-
-              <div className="space-y-3">
-                <div className="bg-white rounded p-3">
-                  <p className="text-xs text-gray-600 font-semibold uppercase mb-1">
-                    Balance ETH
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {formatNumber(escrowBalance.ethBalance)} ETH
-                  </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Token A</div>
+                  <div className="text-xl font-bold text-white">{parseFloat(escrowBalance?.tokenBalances.tokenA || '0').toFixed(2)}</div>
                 </div>
-
-                <div className="bg-white rounded p-3">
-                  <p className="text-xs text-gray-600 font-semibold uppercase mb-1">
-                    Balance Token A
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {formatNumber(escrowBalance.tokenBalances.tokenA)}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded p-3">
-                  <p className="text-xs text-gray-600 font-semibold uppercase mb-1">
-                    Balance Token B
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {formatNumber(escrowBalance.tokenBalances.tokenB)}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded p-3">
-                  <p className="text-xs text-gray-600 font-semibold uppercase mb-1">
-                    Dirección del Contrato
-                  </p>
-                  <p className="font-mono text-sm text-gray-800 break-words">
-                    {ESCROW_ADDRESS}
-                  </p>
+                <div className="space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Token B</div>
+                  <div className="text-xl font-bold text-white">{parseFloat(escrowBalance?.tokenBalances.tokenB || '0').toFixed(2)}</div>
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Cuentas de Anvil */}
-          <div className="bg-white rounded-lg border border-gray-200">
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-              <h3 className="text-lg font-bold text-gray-900">👥 Cuentas de Anvil</h3>
-            </div>
-
-            {accountBalances.length === 0 ? (
-              <div className="p-6 text-center border-2 border-dashed border-gray-300">
-                <p className="text-gray-500">📭 Sin datos de cuentas</p>
-              </div>
-            ) : (
-              <div className="space-y-4 p-4">
-                {accountBalances.map((account, idx) => (
-                  <div
-                    key={account.address}
-                    className={`rounded-lg p-4 border-2 ${
-                      idx === 0
-                        ? 'bg-amber-50 border-amber-300'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-bold text-gray-900">
-                        {account.label}
-                      </h4>
-                      {idx === 0 && (
-                        <span className="px-2 py-1 rounded text-xs font-semibold bg-amber-300 text-amber-900">
-                          ADMIN
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="font-mono text-xs text-gray-600 mb-3 break-words">
-                      {account.address}
-                    </p>
-
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-white rounded p-2">
-                        <p className="text-xs text-gray-500 font-semibold">ETH</p>
-                        <p className="text-sm font-bold text-gray-800">
-                          {formatNumber(account.ethBalance)}
-                        </p>
-                      </div>
-
-                      <div className="bg-white rounded p-2">
-                        <p className="text-xs text-gray-500 font-semibold">Token A</p>
-                        <p className="text-sm font-bold text-gray-800">
-                          {formatNumber(account.tokenBalances.tokenA)}
-                        </p>
-                      </div>
-
-                      <div className="bg-white rounded p-2">
-                        <p className="text-xs text-gray-500 font-semibold">Token B</p>
-                        <p className="text-sm font-bold text-gray-800">
-                          {formatNumber(account.tokenBalances.tokenB)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
+        </section>
 
-          {/* Info Footer */}
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-900">
-              <strong>ℹ️ Información:</strong> Este panel muestra los balances de ETH y tokens
-              del contrato Escrow y 3 cuentas de prueba de Anvil. Utiliza este panel para
-              verificar que las transacciones se han procesado correctamente.
+        {/* Current Wallet Section */}
+        {account && !ANVIL_ACCOUNTS.find(a => a.address.toLowerCase() === account.toLowerCase()) && currentAccountBalance && (
+          <div className="p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/20 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                <span className="text-xs font-bold text-indigo-400 uppercase tracking-tighter">Tu Billetera</span>
+              </div>
+              <span className="text-[10px] font-mono text-gray-500">{truncateAddress(account)}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
+                <div className="text-[8px] text-gray-500 uppercase font-black mb-1">TKNA</div>
+                <div className="text-xs font-black text-white">{parseFloat(currentAccountBalance.tokenBalances.tokenA).toFixed(1)}</div>
+              </div>
+              <div className="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
+                <div className="text-[8px] text-gray-500 uppercase font-black mb-1">TKNB</div>
+                <div className="text-xs font-black text-white">{parseFloat(currentAccountBalance.tokenBalances.tokenB).toFixed(1)}</div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => mintTokens(TOKEN_A_ADDRESS, account)}
+                disabled={isMinting === `${TOKEN_A_ADDRESS}-${account}`}
+                className="flex-1 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 text-[10px] font-black rounded-lg border border-indigo-500/20 transition-all uppercase tracking-widest disabled:opacity-50"
+              >
+                {isMinting === `${TOKEN_A_ADDRESS}-${account}` ? '...' : '+50 TKNA'}
+              </button>
+              <button
+                onClick={() => mintTokens(TOKEN_B_ADDRESS, account)}
+                disabled={isMinting === `${TOKEN_B_ADDRESS}-${account}`}
+                className="flex-1 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 text-[10px] font-black rounded-lg border border-emerald-500/20 transition-all uppercase tracking-widest disabled:opacity-50"
+              >
+                {isMinting === `${TOKEN_B_ADDRESS}-${account}` ? '...' : '+50 TKNB'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Preset Accounts List */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <Database className="w-4 h-4 text-gray-500" />
+            <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Cuentas Preset (Anvil)</span>
+          </div>
+          <div className="space-y-3">
+            {accountBalances.map((acc, i) => (
+              <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-4 hover:border-white/10 transition-all group">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-gray-600 group-hover:bg-indigo-400 transition-colors" />
+                    <span className="text-[11px] font-bold text-white tracking-tight">{acc.label}</span>
+                  </div>
+                  <span className="text-[9px] font-mono text-gray-500">{truncateAddress(acc.address)}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {[
+                    { val: acc.ethBalance, sub: 'ETH', color: 'text-gray-400' },
+                    { val: acc.tokenBalances.tokenA, sub: 'TKNA', color: 'text-indigo-400', addr: TOKEN_A_ADDRESS },
+                    { val: acc.tokenBalances.tokenB, sub: 'TKNB', color: 'text-emerald-400', addr: TOKEN_B_ADDRESS }
+                  ].map((stat, j) => (
+                    <div key={j} className="bg-black/20 rounded-xl px-2 py-2 text-center border border-white/5">
+                      <div className={`text-[11px] font-bold ${stat.color} mb-0.5`}>{parseFloat(stat.val).toFixed(1)}</div>
+                      <div className="text-[7px] font-black tracking-widest text-gray-600 uppercase">{stat.sub}</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Mint Buttons (Faucet) */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => mintTokens(TOKEN_A_ADDRESS, acc.address)}
+                    className="flex-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[8px] font-black uppercase py-1.5 rounded-lg border border-indigo-500/20 transition-all"
+                  >
+                    +50 TKNA
+                  </button>
+                  <button
+                    onClick={() => mintTokens(TOKEN_B_ADDRESS, acc.address)}
+                    className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase py-1.5 rounded-lg border border-emerald-500/20 transition-all"
+                  >
+                    +50 TKNB
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/10 flex items-start gap-3">
+          <Zap className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="text-[9px] leading-relaxed text-gray-500 font-medium">
+              Utiliza los botones superiores para recibir tokens de prueba (Faucet) en cualquier cuenta de Anvil.
+            </p>
+            <p className="text-[9px] leading-relaxed text-gray-400 italic">
+              * El swap fallará si el destinatario no tiene suficiente balance de Token B.
             </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
