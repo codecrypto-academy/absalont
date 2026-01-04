@@ -173,6 +173,22 @@ if [ ! -d "node_modules" ]; then
     npm install > /dev/null 2>&1
 fi
 
+if [ -d "$PROJECT_ROOT/web-admin" ]; then
+    cd "$PROJECT_ROOT/web-admin"
+    if [ ! -d "node_modules" ]; then
+        echo "Instalando dependencias de web-admin..."
+        npm install > /dev/null 2>&1
+    fi
+fi
+
+if [ -d "$PROJECT_ROOT/web-customer" ]; then
+    cd "$PROJECT_ROOT/web-customer"
+    if [ ! -d "node_modules" ]; then
+        echo "Instalando dependencias de web-customer..."
+        npm install > /dev/null 2>&1
+    fi
+fi
+
 # 8. Iniciar aplicaciones
 echo -e "${YELLOW}[8/8] Iniciando aplicaciones...${NC}"
 
