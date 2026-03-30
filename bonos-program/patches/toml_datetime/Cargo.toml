@@ -1,0 +1,13 @@
+[package]
+name = "toml_datetime"
+version = "1.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "A TOML-compatible datetime type"
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { version = "1.0", optional = true }

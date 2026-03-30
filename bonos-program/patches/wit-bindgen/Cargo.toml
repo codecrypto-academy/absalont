@@ -1,0 +1,11 @@
+[package]
+name = "wit-bindgen"
+version = "0.3.0"
+edition = "2021"
+license = "Apache-2.0 WITH LLVM-exception"
+description = "Stub patch for wit-bindgen to avoid BPF target issues"
+
+[lib]
+name = "wit_bindgen"
+
+[dependencies]
