@@ -27,7 +27,7 @@ ls -lha
 
 Una DApp descentralizada construida sobre **Solana** y **Anchor Framework** que implementa el ciclo de vida completo de bonos financieros on-chain: emisión, compra, actualización de precio, cancelación, financiación de redención y canje al vencimiento.
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 ── bonos-program/                   # Raíz del workspace Anchor
@@ -63,14 +63,30 @@ Una DApp descentralizada construida sobre **Solana** y **Anchor Framework** que 
         └── wit-bindgen/
 ```
 
-# Proyecto web con Rocket
+# Solana Auction DApp (Subastas)
 
 ## Descripción General
 
+Este es un **Marketplace de Subastas Descentralizado** de alto rendimiento construido sobre la blockchain de Solana. Utiliza **Anchor** para la lógica de contratos inteligentes y **Next.js** para una experiencia de usuario fluida y profesional.
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
-
+subastas/
+├── subastas_program/          # Lógica On-Chain (Smart Contract)
+│   ├── programs/
+│   │   └── subastas_program/
+│   │       └── src/
+│   │           ├── instructions/  # Módulos de lógica procedimental
+│   │           ├── state.rs       # Definición de estructuras de datos
+│   │           └── lib.rs         # Entrypoint y Routing de cuentas
+│   └── Anchor.toml            # Configuración del despliegue
+├── subastas_app/              # Interfaz de Usuario (Frontend)
+│   ├── src/
+│   │   ├── app/               # Next.js App Router (Páginas y Estilos)
+│   │   ├── context/           # GlobalContext (Sync de Wallet)
+│   │   ├── services/          # SubastasProxy (Abstracción RPC)
+│   │   └── constants/         # IDL y Direcciones del Programa
+└── README.md                  # Documentación Maestra
 ```
 

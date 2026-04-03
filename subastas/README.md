@@ -89,10 +89,77 @@ La aplicación estará disponible en [http://localhost:3000](http://localhost:30
 
 ---
 
-## 📁 Estructura del Código
-- `/subastas_program`: Contiene la lógica en Rust dividida por instrucciones y estado.
-- `/subastas_app/src/context/GlobalContext.tsx`: Manejo robusto del estado global y conexión read-only.
-- `/subastas_app/src/app/subasta/[id]/page.tsx`: Módulo principal de visualización y "Reporte Técnico".
+---
+
+## 🏗️ Arquitectura del Sistema
+
+La aplicación sigue un patrón de arquitectura desacoplada en tres capas para garantizar seguridad, escalabilidad y una experiencia de usuario fluida:
+
+1.  **Capa On-Chain (Rust/Anchor):** El núcleo de la verdad. Gestiona el estado de las subastas, las validaciones de pujas y el mecanismo de reembolso "Bidder Pocket" mediante transferencias directas de sistema.
+2.  **Capa de Servicio (Proxy Pattern):** Ubicada en `subastasProxy.ts`, actúa como un bridge entre la blockchain y la UI, encapsulando la complejidad de las PDAs y la serialización de datos.
+3.  **Capa de Interfaz (Next.js/React):** Gestiona la visualización premium y la sincronización síncrona de la wallet mediante un estado global atómico.
+
+---
+
+## 📈 Flujo del Proceso (Bidder Pocket)
+
+El siguiente diagrama visualiza cómo interactúan los actores durante una puja exitosa:
+
+```mermaid
+sequenceDiagram
+    participant B as Nuevo Pujador
+    participant P as Smart Contract (Anchor)
+    participant PB as Pujador Anterior
+    participant PDA as Subasta Escrow (PDA)
+
+    B->>P: Enviar Instrucción 'crear_puja'
+    Note over P: Validar: Subasta Activa?
+    Note over P: Validar: Puja > Actual?
+    
+    rect rgb(30, 41, 59)
+    Note right of P: Mecanismo de Reembolso
+    P->>PB: Transferencia direct SOL (from B to PB)
+    end
+
+    P->>PDA: Actualizar Ganador e Importe
+    P->>B: Confirmar Transacción
+    Note over B: Éxito: Eres el nuevo líder
+```
+
+---
+
+## 📁 Estructura del Proyecto
+
+```text
+subastas/
+├── subastas_program/          # Lógica On-Chain (Smart Contract)
+│   ├── programs/
+│   │   └── subastas_program/
+│   │       └── src/
+│   │           ├── instructions/  # Módulos de lógica procedimental
+│   │           ├── state.rs       # Definición de estructuras de datos
+│   │           └── lib.rs         # Entrypoint y Routing de cuentas
+│   └── Anchor.toml            # Configuración del despliegue
+├── subastas_app/              # Interfaz de Usuario (Frontend)
+│   ├── src/
+│   │   ├── app/               # Next.js App Router (Páginas y Estilos)
+│   │   ├── context/           # GlobalContext (Sync de Wallet)
+│   │   ├── services/          # SubastasProxy (Abstracción RPC)
+│   │   └── constants/         # IDL y Direcciones del Programa
+└── README.md                  # Documentación Maestra
+```
+
+---
+
+## 📦 Módulos Principales
+
+### 🔴 Subastas Program (Solana)
+*   **crear_puja_ix**: Implementa la lógica de "Bidder Pocket", asegurando que el reembolso no pase por cuentas con datos para evitar errores de simulación.
+*   **finalizar_subasta_ix**: Gestiona la liquidación de fondos hacia el creador al expirar el tiempo.
+
+### 🔵 Subastas App (Next.js)
+*   **GlobalContext**: Centraliza la sincronización de la sesión Anchor, garantizando que el `provider` siempre coincida con la wallet activa.
+*   **SubastaDetalle**: El módulo más complejo, que integra el "Reporte de Protocolo" para transparencia total del estado on-chain.
 
 ---
 
