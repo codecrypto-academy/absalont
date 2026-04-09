@@ -90,3 +90,23 @@ subastas/
 └── README.md                  # Documentación Maestra
 ```
 
+# Solana Swap 2025
+
+## Descripción General
+
+Un mercado de intercambio de tokens descentralizado construido en **Solana** con el framework **Anchor**. Permite a una autoridad inicializar mercados entre dos tokens SPL, establecer precios y agregar liquidez, mientras que cualquier usuario puede realizar intercambios en ambas direcciones (A ⇄ B).
+
+## Estructura del Proyecto
+
+```
+swap/
+├── programs/
+│   └── solana-swap-2025/
+│       └── src/
+│           └── lib.rs          # Lógica del smart contract (Rust + Anchor)
+├── tests/
+│   └── solana-swap-2025.ts     # Suite de pruebas (TypeScript / Mocha)
+├── Anchor.toml                 # Configuración de Anchor
+├── Cargo.toml                  # Dependencias de Rust
+└── package.json                # Dependencias de Node.js
+```
