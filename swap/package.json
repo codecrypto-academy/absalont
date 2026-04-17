@@ -2,7 +2,9 @@
   "license": "ISC",
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
-    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+    "setup:local": "npx ts-node -T scripts/setup-localnet.ts",
+    "setup:local:wallet": "npx ts-node -T scripts/setup-localnet.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",

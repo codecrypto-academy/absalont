@@ -1,0 +1,86 @@
+# ============================================================
+#  DApp — Programa Rust / Anchor (Smart Contract)
+# ============================================================
+
+# ============================================================
+#  Compilación de Rust / Cargo
+# ============================================================
+target/
+**/*.rs.bk
+Cargo.lock
+
+# ============================================================
+#  Anchor
+# ============================================================
+# Artefactos generados por anchor build
+.anchor/
+deploy/
+
+# IDL generado (se puede regenerar con anchor build)
+# Comenta la siguiente línea si quieres versionar el IDL
+idl/
+
+# ============================================================
+#  Validador local de Solana
+# ============================================================
+test-ledger/
+**/test-ledger/
+
+# ============================================================
+#  Keypairs y secretos
+# ============================================================
+id.json
+wallet.json
+keypair.json
+*.pem
+*.key
+*.json.bak
+
+# ============================================================
+#  Variables de entorno
+# ============================================================
+.env
+.env.local
+.env.*.local
+
+# ============================================================
+#  Editores e IDEs
+# ============================================================
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+
+# JetBrains
+.idea/
+*.iml
+
+# Vim / Neovim
+*.swp
+*.swo
+.netrwhist
+
+# ============================================================
+#  Sistema Operativo
+# ============================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ============================================================
+#  Xargo (cross-compilation para BPF)
+# ============================================================
+# Xargo.toml puede versionarse; sus artefactos, no
+xargo/

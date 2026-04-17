@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SolanaSwap · Markets</title>
+    <meta name="description" content="Explorador de mercados del protocolo SolanaSwap en la red local de Solana." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+
+    <!-- ── HEADER ── -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="14" fill="url(#lg1)" opacity="0.2"/>
+              <path d="M8 20 L16 10 L24 20" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 24 L16 14 L24 24" stroke="url(#lg2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+              <defs>
+                <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00d4ff"/>
+                  <stop offset="100%" stop-color="#7c3aed"/>
+                </linearGradient>
+                <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#7c3aed"/>
+                  <stop offset="100%" stop-color="#00d4ff"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span class="logo-text">SolanaSwap</span>
+          <span class="badge-network" id="network-badge">● Localnet</span>
+        </div>
+
+        <nav class="nav">
+          <a class="nav-link active" href="#markets">Markets</a>
+          <a class="nav-link" href="#swap-panel">Swap</a>
+        </nav>
+
+        <div class="wallet-area">
+          <button class="btn btn-wallet" id="btn-connect-wallet">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            Conectar Wallet
+          </button>
+          <div class="wallet-info hidden" id="wallet-info">
+            <div class="wallet-dot"></div>
+            <span class="wallet-address" id="wallet-address">---</span>
+            <span class="sol-balance" id="sol-balance" title="Balance SOL en localnet">0 SOL</span>
+            <button class="btn btn-airdrop hidden" id="btn-airdrop" title="Solicitar SOL de prueba">💧 Airdrop</button>
+            <button class="btn-disconnect" id="btn-disconnect">✕</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── HERO ── -->
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <h1 class="hero-title">Markets Explorer</h1>
+      <p class="hero-subtitle">Descubre todos los pares de intercambio disponibles en el protocolo</p>
+      <div class="hero-stats" id="hero-stats">
+        <div class="stat-item">
+          <span class="stat-value" id="stat-markets">--</span>
+          <span class="stat-label">Markets</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-tvl">--</span>
+          <span class="stat-label">Tokens en Vaults</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-program">
+            <span class="mono">9sJMyh2…</span>
+          </span>
+          <span class="stat-label">Program ID</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MARKETS GRID ── -->
+    <main class="main" id="markets">
+      <div class="section-header">
+        <h2 class="section-title">Mercados Disponibles</h2>
+        <button class="btn btn-refresh" id="btn-refresh" title="Refrescar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Refrescar
+        </button>
+      </div>
+
+      <!-- Estado de carga / error / vacío -->
+      <div class="state-container" id="state-container">
+        <div class="spinner-wrap" id="state-loading">
+          <div class="spinner"></div>
+          <p>Conectando al validator local…</p>
+        </div>
+        <div class="state-empty hidden" id="state-empty">
+          <div class="state-icon">🏜️</div>
+          <p>No se encontraron markets.</p>
+          <small>Asegúrate de que el validator esté corriendo y se haya inicializado al menos un market.</small>
+        </div>
+        <div class="state-error hidden" id="state-error">
+          <div class="state-icon">⚠️</div>
+          <p id="error-message">No se pudo conectar al validator.</p>
+          <small>Verifica que <code>solana-test-validator</code> esté activo en el puerto 8899.</small>
+        </div>
+      </div>
+
+      <!-- Grid de markets -->
+      <div class="markets-grid" id="markets-grid"></div>
+
+      <!-- ── RECENT ACTIVITY ── -->
+      <section class="activity-section hidden" id="activity-section">
+        <div class="section-header">
+          <h2 class="section-title">Actividad Reciente</h2>
+          <button class="btn btn-refresh" id="btn-clear-history" style="font-size: 11px; padding: 5px 10px;">
+            Limpiar Historial
+          </button>
+        </div>
+        <div class="history-list" id="history-list">
+          <!-- Transacciones se insertan aquí -->
+        </div>
+      </section>
+    </main>
+
+    <!-- ── SWAP PANEL (MODAL) ── -->
+    <div class="modal-overlay hidden" id="modal-overlay">
+      <div class="modal" id="swap-panel">
+        <div class="modal-header">
+          <h3 class="modal-title" id="modal-pair-title">Swap</h3>
+          <button class="modal-close" id="modal-close">✕</button>
+        </div>
+
+        <div class="swap-form">
+          <!-- Dirección -->
+          <div class="direction-toggle">
+            <button class="dir-btn active" id="btn-a-to-b">Token A → Token B</button>
+            <button class="dir-btn" id="btn-b-to-a">Token B → Token A</button>
+          </div>
+
+          <!-- Input -->
+          <div class="form-group">
+            <label class="form-label" id="swap-input-label">Cantidad de Token A</label>
+            <div class="input-wrap">
+              <input
+                class="form-input"
+                type="number"
+                id="swap-amount"
+                placeholder="0.00"
+                min="0"
+                step="any"
+              />
+              <button class="btn-max" id="btn-max-amount" type="button">MAX</button>
+              <span class="input-suffix" id="swap-suffix">TKA</span>
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div class="swap-preview" id="swap-preview">
+            <div class="preview-row">
+              <span>Recibirás (aprox.)</span>
+              <span class="preview-value" id="preview-out">—</span>
+            </div>
+            <div class="preview-row">
+              <span>Precio</span>
+              <span class="preview-value" id="preview-price">—</span>
+            </div>
+          </div>
+
+          <!-- SOL warning -->
+          <div class="sol-warning hidden" id="sol-warning">
+            <span>⚠️</span>
+            <div>
+              <strong>Sin SOL en localnet</strong>
+              <p>Tu wallet necesita SOL para pagar las fees. Usa el botón 💧 Airdrop en el header.</p>
+            </div>
+          </div>
+
+          <!-- Wallet token accounts -->
+          <div class="token-accounts" id="token-accounts-info">
+            <p class="ta-hint">💡 Conecta tu wallet para ver los saldos y ejecutar el swap.</p>
+          </div>
+
+          <button class="btn btn-swap" id="btn-execute-swap" disabled>
+            Conecta tu wallet primero
+          </button>
+
+          <div class="tx-result hidden" id="tx-result">
+            <span class="tx-icon">✅</span>
+            <div>
+              <p class="tx-label">Transacción enviada</p>
+              <a class="tx-link" id="tx-link" href="#" target="_blank" rel="noopener">Ver en Explorer →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>SolanaSwap DApp · <span class="mono">Localnet</span> · Program <span class="mono" id="footer-program-id">9sJMyh2aoAGrSmsWArvLxDg7ZwJQhm3ixAPAA7cPJ3a7</span></p>
+    </footer>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

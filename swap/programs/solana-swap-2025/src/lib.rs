@@ -1,11 +1,12 @@
+#![allow(unexpected_cfgs)]
+#![allow(deprecated)]
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount, transfer, Transfer, TransferChecked};
+use anchor_spl::token::{Mint, Token, TokenAccount, transfer, Transfer};
 
 declare_id!("9sJMyh2aoAGrSmsWArvLxDg7ZwJQhm3ixAPAA7cPJ3a7");
 
 #[program]
 pub mod solana_swap_2025 {
-    use std::ops::Mul;
 
     use super::*;
 
@@ -34,9 +35,6 @@ pub mod solana_swap_2025 {
     }
 
     pub fn add_liquidity(ctx: Context<AddLiquidity>, amount_a: u64, amount_b: u64) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        let vault_a = &mut ctx.accounts.vault_a;
-        let vault_b = &mut ctx.accounts.vault_b;
         if amount_a > 0 {
             let cpi_accounts = Transfer {
                 from: ctx.accounts.autority_token_a.to_account_info(),
@@ -60,7 +58,7 @@ pub mod solana_swap_2025 {
 
     pub fn swap(ctx: Context<Swap>, amount: u64, a_to_b: bool) -> Result<()> {
         let market = &mut ctx.accounts.market;
-        if (a_to_b) {
+        if a_to_b {
             let cpi_accounts = Transfer {
                 from: ctx.accounts.user_token_a.to_account_info(),
                 to: ctx.accounts.vault_a.to_account_info(),

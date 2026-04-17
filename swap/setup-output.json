@@ -1,0 +1,16 @@
+{
+  "programId": "9sJMyh2aoAGrSmsWArvLxDg7ZwJQhm3ixAPAA7cPJ3a7",
+  "market": "BkE6HbttR6ZDEUtYoSi7oHTNXG2Bn3CcVzxpES2Nsiyj",
+  "vaultA": "AmF52BcgRrfvpoAMNvLTzbtZAsn3Bxdv5xwfKyigrnGp",
+  "vaultB": "4uUTgj4GntsKjZ1VJP8crP1kqVNkMWVpngioTUYXRVdP",
+  "mintA": "ExVJeqbQGxUsxLw8ehcPQJaj7jRt2WbbxEHgeCDHSc8k",
+  "mintB": "AzTjzU6pvC8t7kJcqnTNVyyq1hEN7Qmrv2Enarw5aRJv",
+  "authority": "CgnGzJu6jVG2ucMizLaQ64QseZv1RFQbLPxxScCBy1cT",
+  "price": "2.5",
+  "decimals": 6,
+  "liquidity": "500,000",
+  "extras": [
+    "CfRTYcWi4dwiE75DyBnCkV58EcPPTFqboqxfjqVurFpy"
+  ],
+  "timestamp": "2026-04-17T01:29:18.901Z"
+}
