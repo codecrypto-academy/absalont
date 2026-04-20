@@ -116,3 +116,31 @@ swap/
 ├── Cargo.toml                      # Dependencias de Rust
 └── package.json                    # Dependencias de Node.js (tests)
 ```
+
+# Northwind Traders: E-Commerce & Dashboard Full-Stack
+
+## Descripción General
+
+Esta es una plataforma integral de alto rendimiento que combina un **Panel Administrativo (Dashboard)** y una **Tienda Virtual (E-commerce)**. El sistema utiliza **Rust** para un backend ultrarrápido y **Next.js** para una interfaz de usuario moderna, profesional y altamente interactiva.
+
+## Estructura del Proyecto
+
+```text
+rust-telco/
+├── back/                # Backend en Rust (Rocket + SQLite)
+│   ├── src/
+│   │   ├── main.rs      # Punto de entrada y configuración
+│   │   ├── models.rs    # Modelos de datos (DTOs)
+│   │   ├── db.rs        # Capa de persistencia y transacciones
+│   │   └── routes.rs    # Controladores de la API (Stats, Checkout, CRM)
+│   ├── northwind.db     # Base de datos SQLite persistente
+│   └── Dockerfile       # Virtualización optimizada para Rust
+├── front/               # Frontend en Next.js (App Router)
+│   ├── src/
+│   │   ├── app/         # Dashboard, Tienda y CRM
+│   │   ├── components/  # Componentes UI (Shadcn/UI)
+│   │   └── lib/         # Cliente API y lógica de estado
+│   └── Dockerfile       # Multi-stage build para Next.js
+└── docker-compose.yml   # Orquestación completa del ecosistema
+```
+
