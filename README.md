@@ -100,13 +100,19 @@ Un mercado de intercambio de tokens descentralizado construido en **Solana** con
 
 ```
 swap/
+├── app/                            # Frontend web (Vite + Vanilla JS)
+│   ├── index.html                  # Estructura HTML de la SPA
+│   ├── style.css                   # Sistema de diseño (glassmorphism)
+│   ├── main.js                     # Lógica: Anchor + Phantom + Swap
+│   ├── vite.config.js              # Configuración de Vite + polyfills
+│   └── package.json                # Dependencias del frontend
 ├── programs/
 │   └── solana-swap-2025/
 │       └── src/
-│           └── lib.rs          # Lógica del smart contract (Rust + Anchor)
+│           └── lib.rs              # Smart contract (Rust + Anchor)
 ├── tests/
-│   └── solana-swap-2025.ts     # Suite de pruebas (TypeScript / Mocha)
-├── Anchor.toml                 # Configuración de Anchor
-├── Cargo.toml                  # Dependencias de Rust
-└── package.json                # Dependencias de Node.js
+│   └── solana-swap-2025.ts         # Suite de pruebas (TypeScript / Mocha)
+├── Anchor.toml                     # Configuración de Anchor
+├── Cargo.toml                      # Dependencias de Rust
+└── package.json                    # Dependencias de Node.js (tests)
 ```

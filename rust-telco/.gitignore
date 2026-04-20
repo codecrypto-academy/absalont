@@ -1,0 +1,45 @@
+# ###########################################################
+# .gitignore - Northwind E-Commerce & Dashboard
+# ###########################################################
+
+# IDEs & System
+# -----------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Backend (Rust)
+# -----------------------------------------------------------
+back/target/
+# back/Cargo.lock  # Recomendado mantenerlo para aplicaciones
+
+# Frontend (Next.js / Node)
+# -----------------------------------------------------------
+front/node_modules/
+front/.next/
+front/out/
+front/build/
+front/.env*
+!front/.env.example
+front/npm-debug.log*
+front/yarn-debug.log*
+front/yarn-error.log*
+front/.vercel/
+front/*.tsbuildinfo
+front/next-env.d.ts
+
+# Database (SQLite)
+# -----------------------------------------------------------
+# Se ignoran archivos de estado y temporales de SQLite
+*.db-journal
+*.db-shm
+*.db-wal
+# *.db  # Descomentar si no se desea subir la base de datos local
+
+# Docker
+# -----------------------------------------------------------
+.docker-build/
+front/docker-build/

@@ -1,0 +1,59 @@
+### Variables globales
+@baseUrl = http://localhost:8001
+
+### Obtener todos los clientes (sin filtros)
+GET {{baseUrl}}/customers
+
+### Obtener clientes con paginación
+GET {{baseUrl}}/customers?page=2&per_page=5
+
+### Obtener clientes filtrados por nombre
+GET {{baseUrl}}/customers?name_filter=Zajazd
+
+### Obtener clientes ordenados por compañía descendente
+GET {{baseUrl}}/customers?order_by=CompanyName&order_direction=DESC
+
+### Combinación de filtros
+GET {{baseUrl}}/customers?page=1&per_page=5&name_filter=a&order_by=CompanyName&order_direction=ASC
+
+### Obtener un cliente específico
+GET {{baseUrl}}/customers/ALFKI11noexiste
+
+### Crear un nuevo cliente
+POST {{baseUrl}}/customers
+Content-Type: application/json
+
+{
+    "customer_id": "DEMO1",
+    "company_name": "Demo Company",
+    "contact_name": "John Doe",
+    "contact_title": "CEO",
+    "address": "123 Main St",
+    "city": "Demo City",
+    "region": "Demo Region",
+    "postal_code": "12345",
+    "country": "Demo Country",
+    "phone": "123-456-7890",
+    "fax": "098-765-4321"
+}
+
+### Actualizar un cliente existente
+PUT {{baseUrl}}/customers/DEMO1
+Content-Type: application/json
+
+{
+    "customer_id": "DEMO1",
+    "company_name": "Updated Company Name",
+    "contact_name": "Jane Doe",
+    "contact_title": "CTO",
+    "address": "456 Other St",
+    "city": "Other City",
+    "region": "Other Region",
+    "postal_code": "54321",
+    "country": "Other Country",
+    "phone": "098-765-4321",
+    "fax": "123-456-7890"
+}
+
+### Eliminar un cliente
+DELETE {{baseUrl}}/customers/DEMO1 
